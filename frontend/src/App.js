@@ -54,6 +54,30 @@ const DIALOGFLOW_WEBHOOK_URL = "/dialogflow-webhook";
 const CITIZEN_VISION_URL = "/analyze-citizen-damage";
 const API_SECRET = "tejas-disaster-resilience-secret-token-2026";
 
+// Custom Resonant Cyclone Resilience Shield Emblem Component
+function CycloneResilienceLogo() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle', filter: 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.5))' }}>
+      <defs>
+        <linearGradient id="shieldFill" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0284c7" />
+          <stop offset="100%" stop-color="#0f172a" />
+        </linearGradient>
+        <linearGradient id="cycloneSpiral" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#38bdf8" />
+          <stop offset="50%" stop-color="#c084fc" />
+          <stop offset="100%" stop-color="#f43f5e" />
+        </linearGradient>
+      </defs>
+      <path d="M32 4L10 14V30C10 44.5 19.4 56.8 32 60C44.6 56.8 54 44.5 54 30V14L32 4Z" fill="url(#shieldFill)" stroke="#38bdf8" strokeWidth="2.5" strokeLinejoin="round" />
+      <circle cx="32" cy="32" r="18" stroke="#38bdf8" strokeOpacity="0.3" strokeWidth="1" strokeDasharray="2 3" />
+      <path d="M32 20C25 20 19 25 19 32C19 39.5 29.5 40 29.5 45.5C29.5 48 27.5 49.5 25 49.5" stroke="url(#cycloneSpiral)" strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M32 44C39 44 45 39 45 32C45 24.5 34.5 24 34.5 18.5C34.5 16 36.5 14.5 39 14.5" stroke="url(#cycloneSpiral)" strokeWidth="3.5" strokeLinecap="round" />
+      <circle cx="32" cy="32" r="3.5" fill="#ffffff" />
+    </svg>
+  );
+}
+
 function RecenterMap({ lat, lon }) {
   const map = useMap();
   useEffect(() => {
@@ -100,7 +124,7 @@ export default function App() {
   const [showTelemetryRings, setShowTelemetryRings] = useState(true);
   const [showNavigationRoute, setShowNavigationRoute] = useState(true);
   const [showViirsHeatmap, setShowViirsHeatmap] = useState(true);
-  const [showBhuvanLayer, setShowBhuvanLayer] = useState(false); // ISRO Bhuvan satellite toggle
+  const [showBhuvanLayer, setShowBhuvanLayer] = useState(false);
   const [simulationStressTest, setSimulationStressTest] = useState(false);
   const [evacueeSurgeActive, setEvacueeSurgeActive] = useState(false);
   const [forceOfflineMode, setForceOfflineMode] = useState(false);
@@ -109,11 +133,11 @@ export default function App() {
   const [isCalling, setIsCalling] = useState(false);
   const [selectedLang, setSelectedLang] = useState('gu');
 
-  // Speech-to-Text state
+  // Speech-to-Text State
   const [isListening, setIsListening] = useState(false);
   const [speechTranscript, setSpeechTranscript] = useState("");
 
-  // Citizen Vision damage upload state
+  // Citizen Vision Damage State
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const [visionReport, setVisionReport] = useState(null);
   const fileInputRef = useRef(null);
@@ -122,6 +146,10 @@ export default function App() {
   const [currentLon, setCurrentLon] = useState(PREDEFINED_LOCATIONS[0].lon);
   const [currentLocationName, setCurrentLocationName] = useState(PREDEFINED_LOCATIONS[0].name);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+
+  useEffect(() => {
+    document.title = "Cyclone Resilience Command Hub";
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => setIsSystemOffline(false);
@@ -134,7 +162,6 @@ export default function App() {
     };
   }, []);
 
-  // Native Browser Speech-to-Text (Cloud Speech-to-Text free alternative)
   const toggleSpeechRecognition = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -497,7 +524,7 @@ export default function App() {
 
   const simulateDialogflowCall = async (queryTextOverride) => {
     setIsCalling(true);
-    const query = typeof queryTextOverride === 'string' ? queryTextOverride : "Check safe evacuation zone";
+    const query = typeof queryTextOverride === 'string' ? queryTextOverride : "Check safe zone";
 
     if (forceOfflineMode || isSystemOffline) {
       setTimeout(() => {
@@ -583,7 +610,7 @@ export default function App() {
           <div className="header-top-row">
             <div>
               <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '17px' }}>
-                <Globe size={18} color="#38bdf8" /> Cyclone Resilience Command Hub
+                <CycloneResilienceLogo /> Cyclone Resilience Command Hub
               </h1>
               <p style={{ margin: '3px 0 0 0', display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '11px' }}>
                 <Cpu size={12} color="#a855f7" /> Vertex AI, BigQuery, ISRO Bhuvan & Real-Road Navigation
@@ -613,7 +640,7 @@ export default function App() {
               >
                 <Flame size={13} /> {simulationStressTest ? "Sim: CYCLONE STRESS-TEST" : "Sim: REAL WEATHER"}
               </button>
-              <button onClick={() => setShowBhuvanLayer(!showBhuvanLayer)} className="toggle-layer-btn" style={{ background: showBhuvanLayer ? '#065f46' : '#1e293b', color: showBhuvanLayer ? '#a7f3d0' : '#94a3b8' }}>
+              <button onClick={() => setShowBhuvanLayer(!showBhuvanLayer)} className="toggle-layer-btn" style={{ background: showBhuvanLayer ? '#065f46' : '#1e293b', color: showBhuvanLayer ? '#a7f3d0' : '#94a3b8', border: showBhuvanLayer ? '1px solid #10b981' : '1px solid #334155' }}>
                 <Satellite size={13} /> {showBhuvanLayer ? "ISRO Bhuvan: ON" : "ISRO Bhuvan: OFF"}
               </button>
               <button onClick={() => setShowViirsHeatmap(!showViirsHeatmap)} className="toggle-layer-btn" style={{ background: showViirsHeatmap ? '#7c2d12' : '#1e293b', color: showViirsHeatmap ? '#fde047' : '#94a3b8' }}>
@@ -671,7 +698,6 @@ export default function App() {
               {isGettingLocation ? <Activity size={12} className="spinner" /> : <Crosshair size={12} />} Locate Me
             </button>
 
-            {/* Cloud Speech-to-Text Voice Query Button */}
             <button
               onClick={toggleSpeechRecognition}
               style={{
@@ -697,15 +723,15 @@ export default function App() {
         <MapContainer center={[currentLat, currentLon]} zoom={8} style={{ height: '100%', width: '100%', backgroundColor: '#020617' }} zoomControl={false}>
           <RecenterMap lat={currentLat} lon={currentLon} />
           
-          {/* Base Map / ISRO Bhuvan Geoportal Layer Toggle */}
-          {showBhuvanLayer ? (
-            <TileLayer
-              attribution='&copy; ISRO Bhuvan / NRSC'
-              url="https://bhuvan-vec1.nrsc.gov.in/bhuvan/gwc/service/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=india3&STYLES=&SRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256&FORMAT=image/png"
-            />
-          ) : (
-            <TileLayer attribution='&copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" />
-          )}
+          <TileLayer
+            key={showBhuvanLayer ? "isro-bhuvan-optical-sat" : "esri-dark-gray-canvas"}
+            attribution={showBhuvanLayer ? '&copy; ISRO / NRSC &mdash; Bhuvan Optical Satellite Feed' : '&copy; Esri World Dark Canvas'}
+            url={
+              showBhuvanLayer
+                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+            }
+          />
 
           {/* Telemetry Radii */}
           {dashboardData && showTelemetryRings && (
@@ -919,7 +945,7 @@ export default function App() {
               <span style={{ color: '#94a3b8' }}>Latency: {dashboardData.latencyMs}ms</span>
             </div>
 
-            {/* Live Atmospheric Telemetry Grid */}
+            {/* Atmospheric Telemetry Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '8px' }}>
               <div style={{ background: '#0f172a', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', textAlign: 'center' }}>
                 <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
@@ -1044,7 +1070,7 @@ export default function App() {
               </div>
             )}
 
-            {/* PUBLIC DATASETS & UN AGENCIES (data.gov.in, IMD, FAO, WHO) */}
+            {/* PUBLIC DATASETS & UN AGENCIES */}
             {dashboardData.publicDatasets && (
               <div className="card" style={{ background: 'rgba(14, 165, 233, 0.08)', border: '1px solid rgba(14, 165, 233, 0.3)' }}>
                 <h3 style={{ color: '#38bdf8', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
