@@ -45,7 +45,8 @@ import {
   Database,
   FileText,
   HeartPulse,
-  Sprout
+  Sprout,
+  Languages
 } from 'lucide-react';
 import './App.css';
 
@@ -89,14 +90,14 @@ function RecenterMap({ lat, lon }) {
 
 const LANGUAGE_OPTIONS = [
   { id: 'hi', label: 'Hindi (India)', code: 'hi-IN' },
-  { id: 'gu', label: 'Gujarati (India)', code: 'gu-IN' },
-  { id: 'bn', label: 'Bengali (India)', code: 'bn-IN' },
-  { id: 'te', label: 'Telugu (India)', code: 'te-IN' },
-  { id: 'mr', label: 'Marathi (India)', code: 'mr-IN' },
-  { id: 'ta', label: 'Tamil (India)', code: 'ta-IN' },
-  { id: 'kn', label: 'Kannada (India)', code: 'kn-IN' },
-  { id: 'or', label: 'Odia (India)', code: 'or-IN' },
-  { id: 'ml', label: 'Malayalam (India)', code: 'ml-IN' },
+  { id: 'gu', label: 'Gujarati (Gujarat)', code: 'gu-IN' },
+  { id: 'bn', label: 'Bengali (West Bengal)', code: 'bn-IN' },
+  { id: 'te', label: 'Telugu (Andhra / Telangana)', code: 'te-IN' },
+  { id: 'mr', label: 'Marathi (Maharashtra)', code: 'mr-IN' },
+  { id: 'ta', label: 'Tamil (Tamil Nadu)', code: 'ta-IN' },
+  { id: 'kn', label: 'Kannada (Karnataka)', code: 'kn-IN' },
+  { id: 'or', label: 'Odia (Odisha)', code: 'or-IN' },
+  { id: 'ml', label: 'Malayalam (Kerala)', code: 'ml-IN' },
   { id: 'pa', label: 'Punjabi (India)', code: 'pa-IN' },
   { id: 'pt', label: 'Portuguese (Brazil/BRICS)', code: 'pt-BR' },
   { id: 'ru', label: 'Russian (Russia/BRICS)', code: 'ru-RU' },
@@ -104,12 +105,13 @@ const LANGUAGE_OPTIONS = [
   { id: 'af', label: 'Afrikaans (South Africa/BRICS)', code: 'af-ZA' }
 ];
 
+// Predefined coastal hubs mapped directly to their regional native languages
 const PREDEFINED_LOCATIONS = [
-  { name: "Ahmedabad (Gujarat)", lat: 23.02, lon: 72.57 },
-  { name: "Mumbai (Maharashtra Coast)", lat: 18.92, lon: 72.81 },
-  { name: "Odisha (Gopalpur / Puri)", lat: 19.31, lon: 84.79 },
-  { name: "Chennai (Coromandel Coast)", lat: 13.04, lon: 80.27 },
-  { name: "Kolkata (Sundarbans Delta)", lat: 21.65, lon: 88.06 }
+  { name: "Ahmedabad (Gujarat)", lat: 23.02, lon: 72.57, defaultLang: "gu" },
+  { name: "Mumbai (Maharashtra Coast)", lat: 18.92, lon: 72.81, defaultLang: "mr" },
+  { name: "Odisha (Gopalpur / Puri)", lat: 19.31, lon: 84.79, defaultLang: "or" },
+  { name: "Chennai (Coromandel Coast)", lat: 13.04, lon: 80.27, defaultLang: "ta" },
+  { name: "Kolkata (Sundarbans Delta)", lat: 21.65, lon: 88.06, defaultLang: "bn" }
 ];
 
 const runOfflineSurgeModel = (windKmph, pressureHpa = 1008) => {
@@ -148,6 +150,7 @@ export default function App() {
   const [currentLocationName, setCurrentLocationName] = useState(PREDEFINED_LOCATIONS[0].name);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
+  // Runtime Title and Favicon Injection to Bypass Disk Caches
   useEffect(() => {
     document.title = "Cyclone Resilience Command Hub";
     let link = document.querySelector("link[rel~='icon']");
@@ -203,6 +206,8 @@ export default function App() {
         handleLocationSelect(3);
       } else if (transcript.toLowerCase().includes("kolkata")) {
         handleLocationSelect(4);
+      } else if (transcript.toLowerCase().includes("ahmedabad") || transcript.toLowerCase().includes("gujarat")) {
+        handleLocationSelect(0);
       } else {
         simulateDialogflowCall(transcript);
       }
@@ -248,9 +253,26 @@ export default function App() {
     setIsGettingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCurrentLat(pos.coords.latitude);
-        setCurrentLon(pos.coords.longitude);
+        const liveLat = pos.coords.latitude;
+        const liveLon = pos.coords.longitude;
+        setCurrentLat(liveLat);
+        setCurrentLon(liveLon);
         setCurrentLocationName("Live GPS Coordinates");
+
+        // Automatically determine closest linguistic coastal zone based on GPS coordinates
+        let nearestHub = PREDEFINED_LOCATIONS[0];
+        let smallestDistance = Infinity;
+        PREDEFINED_LOCATIONS.forEach((hub) => {
+          const dist = Math.hypot(hub.lat - liveLat, hub.lon - liveLon);
+          if (dist < smallestDistance) {
+            smallestDistance = dist;
+            nearestHub = hub;
+          }
+        });
+        if (nearestHub && nearestHub.defaultLang) {
+          setSelectedLang(nearestHub.defaultLang);
+        }
+
         setIsGettingLocation(false);
       },
       () => {
@@ -260,18 +282,24 @@ export default function App() {
     );
   };
 
+  // Location selector with automatic native language assignment
   const handleLocationSelect = (idx) => {
     const selected = PREDEFINED_LOCATIONS[idx];
     setCurrentLat(selected.lat);
     setCurrentLon(selected.lon);
     setCurrentLocationName(selected.name);
+
+    // Automatically switch regional language to the sector's native tongue
+    if (selected.defaultLang) {
+      setSelectedLang(selected.defaultLang);
+    }
   };
 
   const handleLocationDropdown = (e) => {
     if (e.target.value === "LIVE") {
       requestLiveLocation();
     } else {
-      handleLocationSelect(e.target.value);
+      handleLocationSelect(parseInt(e.target.value, 10));
     }
   };
 
@@ -333,10 +361,9 @@ export default function App() {
         }
       }
     } catch (e) {
-      // Handled via spline fallback below
+      // Handled via high-density road spline fallback
     }
 
-    // High-resolution realistic spline fallback if network times out
     if (!realRoadWaypoints || realRoadWaypoints.length < 2) {
       realRoadWaypoints = [];
       const dLat = (destLat - currentLat) / 25;
@@ -1493,12 +1520,18 @@ export default function App() {
               </p>
             </div>
 
-            {/* Dynamic 14-Language Regional Dispatch Selector */}
+            {/* Dynamic 14-Language Regional Dispatch Selector with Native Language Notification */}
             <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <h3 className="text-purple" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Volume2 size={16} /> Regional Dispatch Selector
-                </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <h3 className="text-purple" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Volume2 size={16} /> Regional Dispatch Selector
+                  </h3>
+                  <span style={{ fontSize: '10px', background: '#3b0764', color: '#e9d5ff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #7e22ce', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Languages size={10} /> Auto: Native to Sector
+                  </span>
+                </div>
+
                 <select
                   value={selectedLang}
                   onChange={(e) => setSelectedLang(e.target.value)}
