@@ -8,3 +8,6 @@ An anticipatory civil defense platform built for India's 7,516 km coastline. Ins
 * **Real-Road Navigation:** Computes live road-network evacuation routes that automatically bypass satellite-detected flood barriers (`avoidPolygons`) to reach elevated havens ($>18$m MSL).
 * **Instant Parametric Liquidity:** Automatically releases up to ₹5.0 Crore in emergency relief escrow directly to municipal accounts upon threshold breach, cutting out post-disaster bureaucratic delays.
 * **Inclusive & Offline-First:** Delivers two-way voice alerts in 10 Indian regional languages (auto-detected by coastal sector) and maintains full operational capability during cellular blackouts via client-side edge compute and 128-byte LoRa mesh radio packets.
+<img width="1366" height="729" alt="Desktop View" src="https://github.com/user-attachments/assets/fdb22763-a480-48ad-993e-f84676910f70" />
+<img width="1366" height="735" alt="Stress Simulation" src="https://github.com/user-attachments/assets/4ae46719-95ea-4e90-8513-12d9c48eff3e" />
+<img width="785" height="1600" alt="Mobile View" src="https://github.com/user-attachments/assets/df867787-904f-449d-975b-cb096d4a226a" />
