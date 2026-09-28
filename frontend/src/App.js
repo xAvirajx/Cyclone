@@ -54,7 +54,8 @@ const DIALOGFLOW_WEBHOOK_URL = "/dialogflow-webhook";
 const CITIZEN_VISION_URL = "/analyze-citizen-damage";
 const API_SECRET = "tejas-disaster-resilience-secret-token-2026";
 
-// Custom Resonant Cyclone Resilience Shield Emblem Component
+const CYCLONE_FAVICON_DATA_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='shieldGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%230369a1'/%3E%3Cstop offset='60%25' stop-color='%230f172a'/%3E%3Cstop offset='100%25' stop-color='%23020617'/%3E%3C/linearGradient%3E%3ClinearGradient id='cycloneGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2338bdf8'/%3E%3Cstop offset='45%25' stop-color='%23a855f7'/%3E%3Cstop offset='100%25' stop-color='%23ef4444'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 4L10 14V30C10 44.5 19.4 56.8 32 60C44.6 56.8 54 44.5 54 30V14L32 4Z' fill='url(%23shieldGrad)' stroke='%2338bdf8' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ccircle cx='32' cy='32' r='18' stroke='%2338bdf8' stroke-opacity='0.3' stroke-width='1.2' stroke-dasharray='2 3'/%3E%3Ccircle cx='32' cy='32' r='12' stroke='%23a855f7' stroke-opacity='0.35' stroke-width='1.2' stroke-dasharray='3 3'/%3E%3Cpath d='M32 19C24.5 19 18.5 24.5 18.5 31.5C18.5 40 30 40.5 30 46.5C30 49 28 50.5 25.5 50.5C22.5 50.5 20.5 48.5 20 46' stroke='url(%23cycloneGrad)' stroke-width='3.5' stroke-linecap='round'/%3E%3Cpath d='M32 45C39.5 45 45.5 39.5 45.5 32.5C45.5 24 34 23.5 34 17.5C34 15 36 13.5 38.5 13.5C41.5 13.5 43.5 15.5 44 18' stroke='url(%23cycloneGrad)' stroke-width='3.5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='3.5' fill='%23f8fafc' stroke='%2338bdf8' stroke-width='1.5'/%3E%3C/svg%3E";
+
 function CycloneResilienceLogo() {
   return (
     <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle', filter: 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.5))' }}>
@@ -147,8 +148,17 @@ export default function App() {
   const [currentLocationName, setCurrentLocationName] = useState(PREDEFINED_LOCATIONS[0].name);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
+  // Runtime Title and Favicon Injection to Bypass Disk Caches
   useEffect(() => {
     document.title = "Cyclone Resilience Command Hub";
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    link.type = 'image/svg+xml';
+    link.href = CYCLONE_FAVICON_DATA_URI;
   }, []);
 
   useEffect(() => {
@@ -272,7 +282,7 @@ export default function App() {
     canvas.height = 300;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = "#020617";
-    ctx.fillRect(0, 0, 400, 300);
+    ctx.fillRect(0, 400, 300);
     return canvas.toDataURL('image/png');
   };
 
