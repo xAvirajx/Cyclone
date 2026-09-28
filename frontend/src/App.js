@@ -46,7 +46,8 @@ import {
   FileText,
   HeartPulse,
   Sprout,
-  Languages
+  Languages,
+  ChevronDown
 } from 'lucide-react';
 import './App.css';
 
@@ -59,16 +60,16 @@ const CYCLONE_FAVICON_DATA_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3
 
 function CycloneResilienceLogo() {
   return (
-    <svg width="22" height="22" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle', filter: 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.5))' }}>
+    <svg width="20" height="20" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle', filter: 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.5))', flexShrink: 0 }}>
       <defs>
         <linearGradient id="shieldFill" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#0284c7" />
-          <stop offset="100%" stop-color="#0f172a" />
+          <stop offset="0%" stopColor="#0284c7" />
+          <stop offset="100%" stopColor="#0f172a" />
         </linearGradient>
         <linearGradient id="cycloneSpiral" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#38bdf8" />
-          <stop offset="50%" stop-color="#c084fc" />
-          <stop offset="100%" stop-color="#f43f5e" />
+          <stop offset="0%" stopColor="#38bdf8" />
+          <stop offset="50%" stopColor="#c084fc" />
+          <stop offset="100%" stopColor="#f43f5e" />
         </linearGradient>
       </defs>
       <path d="M32 4L10 14V30C10 44.5 19.4 56.8 32 60C44.6 56.8 54 44.5 54 30V14L32 4Z" fill="url(#shieldFill)" stroke="#38bdf8" strokeWidth="2.5" strokeLinejoin="round" />
@@ -105,7 +106,6 @@ const LANGUAGE_OPTIONS = [
   { id: 'af', label: 'Afrikaans (South Africa/BRICS)', code: 'af-ZA' }
 ];
 
-// Predefined coastal hubs mapped directly to their regional native languages
 const PREDEFINED_LOCATIONS = [
   { name: "Ahmedabad (Gujarat)", lat: 23.02, lon: 72.57, defaultLang: "gu" },
   { name: "Mumbai (Maharashtra Coast)", lat: 18.92, lon: 72.81, defaultLang: "mr" },
@@ -144,13 +144,13 @@ export default function App() {
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const [visionReport, setVisionReport] = useState(null);
   const fileInputRef = useRef(null);
+  const sidePanelRef = useRef(null);
 
   const [currentLat, setCurrentLat] = useState(PREDEFINED_LOCATIONS[0].lat);
   const [currentLon, setCurrentLon] = useState(PREDEFINED_LOCATIONS[0].lon);
   const [currentLocationName, setCurrentLocationName] = useState(PREDEFINED_LOCATIONS[0].name);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
-  // Runtime Title and Favicon Injection to Bypass Disk Caches
   useEffect(() => {
     document.title = "Cyclone Resilience Command Hub";
     let link = document.querySelector("link[rel~='icon']");
@@ -259,7 +259,6 @@ export default function App() {
         setCurrentLon(liveLon);
         setCurrentLocationName("Live GPS Coordinates");
 
-        // Automatically determine closest linguistic coastal zone based on GPS coordinates
         let nearestHub = PREDEFINED_LOCATIONS[0];
         let smallestDistance = Infinity;
         PREDEFINED_LOCATIONS.forEach((hub) => {
@@ -282,14 +281,12 @@ export default function App() {
     );
   };
 
-  // Location selector with automatic native language assignment
   const handleLocationSelect = (idx) => {
     const selected = PREDEFINED_LOCATIONS[idx];
     setCurrentLat(selected.lat);
     setCurrentLon(selected.lon);
     setCurrentLocationName(selected.name);
 
-    // Automatically switch regional language to the sector's native tongue
     if (selected.defaultLang) {
       setSelectedLang(selected.defaultLang);
     }
@@ -303,6 +300,12 @@ export default function App() {
     }
   };
 
+  const scrollToIntel = () => {
+    if (sidePanelRef.current) {
+      sidePanelRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const generateMultimodalBase64Snapshot = () => {
     const canvas = document.createElement('canvas');
     canvas.width = 400;
@@ -313,7 +316,6 @@ export default function App() {
     return canvas.toDataURL('image/png');
   };
 
-  // Complete, fully-typed edge computation engine with guaranteed field parity
   const runOfflineEdgePipeline = async (surgeActive) => {
     const effectiveWind = simulationStressTest ? 145 : 22;
     const effectivePressure = simulationStressTest ? 965 : 1012;
@@ -361,7 +363,7 @@ export default function App() {
         }
       }
     } catch (e) {
-      // Handled via high-density road spline fallback
+      // Handled via fallback
     }
 
     if (!realRoadWaypoints || realRoadWaypoints.length < 2) {
@@ -701,115 +703,120 @@ export default function App() {
     <div className="dashboard">
       <div className="map-panel">
         <div className="header-overlay">
+          {/* Top Title Bar with Icon & Mobile Quick-Scroll Link */}
           <div className="header-top-row">
-            <div>
-              <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '17px' }}>
-                <CycloneResilienceLogo /> Cyclone Resilience Command Hub
-              </h1>
-              <p style={{ margin: '3px 0 0 0', display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '11px' }}>
-                <Cpu size={12} color="#a855f7" /> Vertex AI, BigQuery, ISRO Bhuvan & Real-Road Navigation
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <CycloneResilienceLogo />
+              <div style={{ minWidth: 0 }}>
+                <h1 style={{ margin: 0, fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Cyclone Resilience Command Hub
+                </h1>
+                <p style={{ margin: '2px 0 0 0', color: '#94a3b8', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Vertex AI, BigQuery, ISRO Bhuvan & Real Roads
+                </p>
+              </div>
             </div>
-            <div className="header-button-group">
-              <button
-                onClick={() => setForceOfflineMode(!forceOfflineMode)}
-                className="toggle-layer-btn"
-                style={{
-                  background: forceOfflineMode ? '#7c2d12' : '#1e293b',
-                  color: forceOfflineMode ? '#fef08a' : '#94a3b8',
-                  border: forceOfflineMode ? '1px solid #ca8a04' : '1px solid #334155'
-                }}
-              >
-                {forceOfflineMode ? <WifiOff size={13} color="#facc15" /> : <Wifi size={13} />} {forceOfflineMode ? "Network: ZERO INTERNET" : "Network: ONLINE"}
-              </button>
 
-              <button
-                onClick={() => setSimulationStressTest(!simulationStressTest)}
-                className="toggle-layer-btn"
-                style={{
-                  background: simulationStressTest ? '#b91c1c' : '#065f46',
-                  color: '#fef2f2',
-                  border: simulationStressTest ? '1px solid #ef4444' : '1px solid #10b981'
-                }}
-              >
-                <Flame size={13} /> {simulationStressTest ? "Sim: CYCLONE STRESS-TEST" : "Sim: REAL WEATHER"}
-              </button>
-              <button onClick={() => setShowBhuvanLayer(!showBhuvanLayer)} className="toggle-layer-btn" style={{ background: showBhuvanLayer ? '#065f46' : '#1e293b', color: showBhuvanLayer ? '#a7f3d0' : '#94a3b8', border: showBhuvanLayer ? '1px solid #10b981' : '1px solid #334155' }}>
-                <Satellite size={13} /> {showBhuvanLayer ? "ISRO Bhuvan: ON" : "ISRO Bhuvan: OFF"}
-              </button>
-              <button onClick={() => setShowViirsHeatmap(!showViirsHeatmap)} className="toggle-layer-btn" style={{ background: showViirsHeatmap ? '#7c2d12' : '#1e293b', color: showViirsHeatmap ? '#fde047' : '#94a3b8' }}>
-                <Lightbulb size={13} /> {showViirsHeatmap ? "VIIRS Lights: ON" : "VIIRS Lights: OFF"}
-              </button>
-              <button onClick={() => setShowNavigationRoute(!showNavigationRoute)} className="toggle-layer-btn" style={{ background: showNavigationRoute ? '#0369a1' : '#1e293b', color: '#ffffff' }}>
-                <Route size={13} /> {showNavigationRoute ? "Routes: ON" : "Routes: OFF"}
-              </button>
-              <button onClick={() => setShowTelemetryRings(!showTelemetryRings)} className="toggle-layer-btn">
-                <Layers size={13} /> {showTelemetryRings ? "Rings: ON" : "Rings: OFF"}
-              </button>
-            </div>
+            {/* Mobile Touch Helper */}
+            <button
+              onClick={scrollToIntel}
+              className="toggle-layer-btn"
+              style={{ background: '#0284c7', color: '#ffffff', border: '1px solid #38bdf8', padding: '3px 7px', fontSize: '10.5px' }}
+              title="Jump to Telemetry & Intel Directives"
+            >
+              <ChevronDown size={12} /> Intel
+            </button>
           </div>
 
+          {/* Swipeable Single-Row Carousel for Toggle Buttons */}
+          <div className="header-button-group">
+            <button
+              onClick={() => setForceOfflineMode(!forceOfflineMode)}
+              className="toggle-layer-btn"
+              style={{
+                background: forceOfflineMode ? '#7c2d12' : '#1e293b',
+                color: forceOfflineMode ? '#fef08a' : '#94a3b8',
+                border: forceOfflineMode ? '1px solid #ca8a04' : '1px solid #334155'
+              }}
+            >
+              {forceOfflineMode ? <WifiOff size={12} color="#facc15" /> : <Wifi size={12} />} {forceOfflineMode ? "ZERO INTERNET" : "ONLINE"}
+            </button>
+
+            <button
+              onClick={() => setSimulationStressTest(!simulationStressTest)}
+              className="toggle-layer-btn"
+              style={{
+                background: simulationStressTest ? '#b91c1c' : '#065f46',
+                color: '#fef2f2',
+                border: simulationStressTest ? '1px solid #ef4444' : '1px solid #10b981'
+              }}
+            >
+              <Flame size={12} /> {simulationStressTest ? "Sim: STRESS-TEST" : "Sim: REAL"}
+            </button>
+
+            <button onClick={() => setShowBhuvanLayer(!showBhuvanLayer)} className="toggle-layer-btn" style={{ background: showBhuvanLayer ? '#065f46' : '#1e293b', color: showBhuvanLayer ? '#a7f3d0' : '#94a3b8', border: showBhuvanLayer ? '1px solid #10b981' : '1px solid #334155' }}>
+              <Satellite size={12} /> {showBhuvanLayer ? "Bhuvan: ON" : "Bhuvan: OFF"}
+            </button>
+
+            <button onClick={() => setShowViirsHeatmap(!showViirsHeatmap)} className="toggle-layer-btn" style={{ background: showViirsHeatmap ? '#7c2d12' : '#1e293b', color: showViirsHeatmap ? '#fde047' : '#94a3b8' }}>
+              <Lightbulb size={12} /> {showViirsHeatmap ? "VIIRS: ON" : "VIIRS: OFF"}
+            </button>
+
+            <button onClick={() => setShowNavigationRoute(!showNavigationRoute)} className="toggle-layer-btn" style={{ background: showNavigationRoute ? '#0369a1' : '#1e293b', color: '#ffffff' }}>
+              <Route size={12} /> {showNavigationRoute ? "Routes: ON" : "Routes: OFF"}
+            </button>
+
+            <button onClick={() => setShowTelemetryRings(!showTelemetryRings)} className="toggle-layer-btn">
+              <Layers size={12} /> {showTelemetryRings ? "Rings: ON" : "Rings: OFF"}
+            </button>
+          </div>
+
+          {/* Consolidated Sector Selection Row */}
           <div className="header-sector-row">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#94a3b8', fontSize: '12px' }}>
-              <MapPin size={13} /> Sector:
-            </div>
             <select
               onChange={handleLocationDropdown}
               style={{
                 background: '#0f172a',
                 color: '#f8fafc',
                 border: '1px solid #334155',
-                padding: '5px 8px',
+                padding: '5px 7px',
                 borderRadius: '4px',
-                fontSize: '12px',
+                fontSize: '11.5px',
                 outline: 'none',
-                flex: 1,
-                minWidth: '150px'
+                flex: 1
               }}
             >
               {PREDEFINED_LOCATIONS.map((loc, idx) => (
                 <option key={idx} value={idx}>{loc.name}</option>
               ))}
-              <option value="LIVE">Live GPS Position...</option>
+              <option value="LIVE">Live GPS...</option>
             </select>
+
             <button
               onClick={requestLiveLocation}
               disabled={isGettingLocation}
+              className="toggle-layer-btn"
               style={{
                 background: '#0369a1',
                 color: 'white',
-                border: 'none',
-                padding: '5px 10px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '12px',
-                whiteSpace: 'nowrap'
+                border: '1px solid #38bdf8'
               }}
+              title="Locate via GPS"
             >
-              {isGettingLocation ? <Activity size={12} className="spinner" /> : <Crosshair size={12} />} Locate Me
+              {isGettingLocation ? <Activity size={12} className="spinner" /> : <Crosshair size={12} />} Locate
             </button>
 
             <button
               onClick={toggleSpeechRecognition}
+              className="toggle-layer-btn"
               style={{
                 background: isListening ? '#dc2626' : '#1e293b',
                 color: '#ffffff',
-                border: '1px solid #334155',
-                padding: '5px 10px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '12px',
-                whiteSpace: 'nowrap'
+                border: isListening ? '1px solid #ef4444' : '1px solid #334155'
               }}
-              title="Click to speak (Cloud Speech-to-Text Voice Query)"
+              title="Voice Query"
             >
-              {isListening ? <MicOff size={12} /> : <Mic size={12} />} {isListening ? "Listening..." : "Voice Query"}
+              {isListening ? <MicOff size={12} /> : <Mic size={12} />} Voice
             </button>
           </div>
         </div>
@@ -906,7 +913,7 @@ export default function App() {
             </CircleMarker>
           ))}
 
-          {/* Crash-Proof Real Road Polyline Vectors */}
+          {/* Real Road Polyline Vectors */}
           {dashboardData && showNavigationRoute && dashboardData.evacuationRouting?.routeWaypoints && dashboardData.evacuationRouting.routeWaypoints.length > 1 && (
             <Polyline
               positions={dashboardData.evacuationRouting.routeWaypoints}
@@ -1008,61 +1015,64 @@ export default function App() {
             ))}
         </MapContainer>
 
+        {/* Horizontal Swipeable Legend Strip */}
         <div className="map-legend">
-          <div className="legend-item"><span className="dot" style={{ background: '#38bdf8' }}></span> Cyan Line: Real Road Evacuation Route</div>
-          <div className="legend-item"><span className="dot" style={{ background: '#facc15' }}></span> Gold Halo: VIIRS Electrified Light Grid</div>
-          <div className="legend-item"><span className="dot" style={{ background: '#ef4444' }}></span> Red Ring: Projected Grid Blackout Hotspot</div>
-          <div className="legend-item"><span className="dot" style={{ background: '#10b981' }}></span> Green: Safe Haven Shelter (&gt;18m)</div>
+          <div className="legend-item"><span className="dot" style={{ background: '#38bdf8' }}></span> Cyan Line: Evacuation Route</div>
+          <div className="legend-item"><span className="dot" style={{ background: '#facc15' }}></span> Gold Halo: VIIRS Light Grid</div>
+          <div className="legend-item"><span className="dot" style={{ background: '#ef4444' }}></span> Red Ring: Projected Blackout</div>
+          <div className="legend-item"><span className="dot" style={{ background: '#10b981' }}></span> Green: Safe Haven (&gt;18m)</div>
         </div>
 
+        {/* Floating Evaluate Pre-Landfall Risk Action Button */}
         <button onClick={() => fetchAIAnalysis()} disabled={loading} className="action-button" style={{ background: dashboardData?.riskColor || '#059669' }}>
-          {loading ? <Activity size={17} className="spinner" /> : <AlertTriangle size={17} />}
-          {loading ? "Running Vertex AI AutoML & Ingesting BigQuery Records..." : `Evaluate Pre-Landfall Risk for ${currentLocationName}`}
+          {loading ? <Activity size={16} className="spinner" /> : <AlertTriangle size={16} />}
+          {loading ? "Evaluating Telemetry & BigQuery..." : `Evaluate Risk for ${currentLocationName}`}
         </button>
       </div>
 
-      <div className="side-panel">
+      {/* Side Intel & Telemetry Panel (Anchored with ref for mobile scroll) */}
+      <div className="side-panel" ref={sidePanelRef}>
         {!dashboardData ? (
-          <div style={{ height: '100%', minHeight: '260px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748b', textAlign: 'center', gap: '12px' }}>
-            <Activity size={44} style={{ opacity: 0.3 }} />
-            <p style={{ margin: 0, fontWeight: 500, color: '#94a3b8' }}>Real-Time Disaster Risk Modeling Engine</p>
-            <p style={{ fontSize: '12px', margin: 0, maxWidth: '280px', lineHeight: 1.5 }}>
+          <div style={{ height: '100%', minHeight: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748b', textAlign: 'center', gap: '10px' }}>
+            <Activity size={36} style={{ opacity: 0.3 }} />
+            <p style={{ margin: 0, fontWeight: 500, color: '#94a3b8', fontSize: '13px' }}>Real-Time Disaster Risk Modeling Engine</p>
+            <p style={{ fontSize: '11.5px', margin: 0, maxWidth: '280px', lineHeight: 1.4 }}>
               Select any coastal location or use GPS to calculate live surge heights, Vertex AI damage probabilities, BigQuery cyclone analogues, and real road evacuation paths.
             </p>
           </div>
         ) : (
           <>
             <div className="telemetry-bar">
-              <span style={{ color: dashboardData.riskColor || '#10b981', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
-                {isGreen ? <ShieldCheck size={14} /> : <AlertTriangle size={14} />} {dashboardData.riskTier || "GREEN"} TIER: {dashboardData.engine}
+              <span style={{ color: dashboardData.riskColor || '#10b981', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
+                {isGreen ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />} {dashboardData.riskTier || "GREEN"} TIER: {dashboardData.engine}
               </span>
               <span style={{ color: '#94a3b8' }}>Latency: {dashboardData.latencyMs || 24}ms</span>
             </div>
 
             {/* Atmospheric Telemetry Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '8px' }}>
-              <div style={{ background: '#0f172a', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                  <Wind size={12} /> Wind
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+              <div style={{ background: '#0f172a', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', textAlign: 'center' }}>
+                <div style={{ fontSize: '10px', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                  <Wind size={11} /> Wind
                 </div>
-                <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', marginTop: '2px' }}>
-                  {dashboardData.liveWindSpeed} <span style={{ fontSize: '10px' }}>km/h</span>
-                </div>
-              </div>
-              <div style={{ background: '#0f172a', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                  <Gauge size={12} /> Pressure
-                </div>
-                <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#a855f7', marginTop: '2px' }}>
-                  {dashboardData.livePressure} <span style={{ fontSize: '10px' }}>hPa</span>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#38bdf8', marginTop: '2px' }}>
+                  {dashboardData.liveWindSpeed} <span style={{ fontSize: '9px' }}>km/h</span>
                 </div>
               </div>
-              <div style={{ background: '#0f172a', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                  <CloudRain size={12} /> Rain (24h)
+              <div style={{ background: '#0f172a', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', textAlign: 'center' }}>
+                <div style={{ fontSize: '10px', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                  <Gauge size={11} /> Pressure
                 </div>
-                <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
-                  {dashboardData.liveRainfallMm} <span style={{ fontSize: '10px' }}>mm</span>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#a855f7', marginTop: '2px' }}>
+                  {dashboardData.livePressure} <span style={{ fontSize: '9px' }}>hPa</span>
+                </div>
+              </div>
+              <div style={{ background: '#0f172a', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', textAlign: 'center' }}>
+                <div style={{ fontSize: '10px', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                  <CloudRain size={11} /> Rain (24h)
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
+                  {dashboardData.liveRainfallMm} <span style={{ fontSize: '9px' }}>mm</span>
                 </div>
               </div>
             </div>
@@ -1072,28 +1082,28 @@ export default function App() {
               <div className="card" style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <h3 style={{ color: '#818cf8', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Cpu size={15} /> Vertex AI AutoML Model Serving
+                    <Cpu size={14} /> Vertex AI AutoML Model Serving
                   </h3>
-                  <span style={{ fontSize: '10px', background: '#312e81', color: '#c7d2fe', padding: '2px 6px', borderRadius: '4px' }}>
-                    asia-south1 Endpoint
+                  <span style={{ fontSize: '9px', background: '#312e81', color: '#c7d2fe', padding: '2px 5px', borderRadius: '4px' }}>
+                    asia-south1
                   </span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', fontSize: '11px', textAlign: 'center', marginTop: '6px' }}>
-                  <div style={{ background: '#020617', padding: '6px', borderRadius: '4px', border: '1px solid #1e293b' }}>
-                    <span style={{ color: '#94a3b8', fontSize: '10px' }}>Inundation Prob</span>
-                    <div style={{ color: '#f87171', fontWeight: 'bold', fontSize: '13px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', fontSize: '10.5px', textAlign: 'center', marginTop: '4px' }}>
+                  <div style={{ background: '#020617', padding: '5px', borderRadius: '4px', border: '1px solid #1e293b' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '9.5px' }}>Inundation</span>
+                    <div style={{ color: '#f87171', fontWeight: 'bold', fontSize: '12px' }}>
                       {Math.round((dashboardData.vertexAIModel.predictionScores?.catastrophic_inundation_prob || 0.08) * 100)}%
                     </div>
                   </div>
-                  <div style={{ background: '#020617', padding: '6px', borderRadius: '4px', border: '1px solid #1e293b' }}>
-                    <span style={{ color: '#94a3b8', fontSize: '10px' }}>Structure Failure</span>
-                    <div style={{ color: '#fb923c', fontWeight: 'bold', fontSize: '13px' }}>
+                  <div style={{ background: '#020617', padding: '5px', borderRadius: '4px', border: '1px solid #1e293b' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '9.5px' }}>Structure</span>
+                    <div style={{ color: '#fb923c', fontWeight: 'bold', fontSize: '12px' }}>
                       {Math.round((dashboardData.vertexAIModel.predictionScores?.structural_failure_prob || 0.06) * 100)}%
                     </div>
                   </div>
-                  <div style={{ background: '#020617', padding: '6px', borderRadius: '4px', border: '1px solid #1e293b' }}>
-                    <span style={{ color: '#94a3b8', fontSize: '10px' }}>Grid Trip Prob</span>
-                    <div style={{ color: '#facc15', fontWeight: 'bold', fontSize: '13px' }}>
+                  <div style={{ background: '#020617', padding: '5px', borderRadius: '4px', border: '1px solid #1e293b' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '9.5px' }}>Grid Trip</span>
+                    <div style={{ color: '#facc15', fontWeight: 'bold', fontSize: '12px' }}>
                       {Math.round((dashboardData.vertexAIModel.predictionScores?.grid_tripping_prob || 0.09) * 100)}%
                     </div>
                   </div>
@@ -1103,9 +1113,9 @@ export default function App() {
 
             {/* VERTEX AI VISION / CITIZEN DAMAGE PHOTO UPLOAD MODULE */}
             <div className="card" style={{ background: 'rgba(236, 72, 153, 0.08)', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <h3 style={{ color: '#f472b6', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Camera size={15} /> Vertex AI Vision: Citizen Damage Photo
+                  <Camera size={14} /> Vertex AI Vision: Damage Photo
                 </h3>
                 <input
                   type="file"
@@ -1118,26 +1128,26 @@ export default function App() {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={analyzingPhoto}
                   className="play-btn"
-                  style={{ background: '#831843', color: '#fbcfe8', border: '1px solid #db2777', padding: '3px 8px' }}
+                  style={{ background: '#831843', color: '#fbcfe8', border: '1px solid #db2777', padding: '2px 7px', fontSize: '10px' }}
                 >
-                  {analyzingPhoto ? <Activity size={12} className="spinner" /> : <Camera size={12} />}
-                  {analyzingPhoto ? "Scanning..." : "Upload Photo"}
+                  {analyzingPhoto ? <Activity size={11} className="spinner" /> : <Camera size={11} />}
+                  {analyzingPhoto ? "Scanning..." : "Upload"}
                 </button>
               </div>
 
               {visionReport ? (
-                <div style={{ background: '#020617', padding: '8px', borderRadius: '4px', border: '1px solid #1e293b', fontSize: '11.5px' }}>
+                <div style={{ background: '#020617', padding: '6px 8px', borderRadius: '4px', border: '1px solid #1e293b', fontSize: '11px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f472b6', fontWeight: 600 }}>
                     <span>{visionReport.damageCategory}</span>
                     <span style={{ color: '#ef4444' }}>{visionReport.severityLevel}</span>
                   </div>
-                  <div style={{ color: '#cbd5e1', marginTop: '4px', fontSize: '11px' }}>
+                  <div style={{ color: '#cbd5e1', marginTop: '3px', fontSize: '10.5px' }}>
                     {visionReport.immediateRescueRecommendation}
                   </div>
                 </div>
               ) : (
-                <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>
-                  Upload citizen-submitted photos (flooded roads, collapsed lines) for automatic Multimodal Gemini & Vertex Vision damage assessment.
+                <p style={{ margin: 0, fontSize: '10.5px', color: '#94a3b8' }}>
+                  Upload citizen-submitted photos for Multimodal Gemini & Vertex Vision damage assessment.
                 </p>
               )}
             </div>
@@ -1147,17 +1157,17 @@ export default function App() {
               <div className="card" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <h3 style={{ color: '#34d399', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Database size={15} /> BigQuery Historical Storm Analogs
+                    <Database size={14} /> BigQuery Historical Storm Analogs
                   </h3>
-                  <span style={{ fontSize: '9.5px', color: '#a7f3d0' }}>
-                    public-data.noaa_hurricanes
+                  <span style={{ fontSize: '9px', color: '#a7f3d0' }}>
+                    noaa_hurricanes
                   </span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', marginTop: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '10.5px' }}>
                   {dashboardData.bigqueryHistory.historicalAnalogsForSector?.map((storm, sIdx) => (
-                    <div key={sIdx} style={{ background: '#020617', padding: '6px 8px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                    <div key={sIdx} style={{ background: '#020617', padding: '5px 7px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontWeight: 600, color: '#f1f5f9' }}>{storm.cycloneName} ({storm.year})</span>
-                      <span style={{ color: '#38bdf8' }}>Wind: {storm.peakWindKmph} km/h | Surge: {storm.actualSurgeMeters}m</span>
+                      <span style={{ color: '#38bdf8' }}>Wind: {storm.peakWindKmph}km/h | {storm.actualSurgeMeters}m</span>
                     </div>
                   ))}
                 </div>
@@ -1167,28 +1177,28 @@ export default function App() {
             {/* PUBLIC DATASETS & UN AGENCIES */}
             {dashboardData.publicDatasets && (
               <div className="card" style={{ background: 'rgba(14, 165, 233, 0.08)', border: '1px solid rgba(14, 165, 233, 0.3)' }}>
-                <h3 style={{ color: '#38bdf8', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <FileText size={15} /> Public Data & Global Multi-Agency Feeds
+                <h3 style={{ color: '#38bdf8', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FileText size={14} /> Public Data & UN Multi-Agency Feeds
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' }}>
-                  <div style={{ background: '#020617', padding: '6px 8px', borderRadius: '4px', borderLeft: '3px solid #38bdf8' }}>
-                    <div style={{ color: '#38bdf8', fontWeight: 600 }}>IMD Coastal Warning Bulletin</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '10.5px' }}>
+                  <div style={{ background: '#020617', padding: '5px 7px', borderRadius: '4px', borderLeft: '3px solid #38bdf8' }}>
+                    <div style={{ color: '#38bdf8', fontWeight: 600 }}>IMD Warning Bulletin</div>
                     <div style={{ color: '#cbd5e1' }}>{dashboardData.publicDatasets.imdBulletin?.coastalWarningStatus}</div>
                   </div>
-                  <div style={{ background: '#020617', padding: '6px 8px', borderRadius: '4px', borderLeft: '3px solid #10b981' }}>
+                  <div style={{ background: '#020617', padding: '5px 7px', borderRadius: '4px', borderLeft: '3px solid #10b981' }}>
                     <div style={{ color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Sprout size={11} /> FAO Agro-Met Crop Exposure Index
+                      <Sprout size={11} /> FAO Agro-Met Crop Exposure
                     </div>
                     <div style={{ color: '#cbd5e1' }}>
-                      Vulnerable Acreage: <strong>{(dashboardData.publicDatasets.faoAgriculture?.vulnerableCropAcreageHectares || 0).toLocaleString()} Hectares</strong>
+                      Acreage: <strong>{(dashboardData.publicDatasets.faoAgriculture?.vulnerableCropAcreageHectares || 0).toLocaleString()} Ha</strong>
                     </div>
                   </div>
-                  <div style={{ background: '#020617', padding: '6px 8px', borderRadius: '4px', borderLeft: '3px solid #f43f5e' }}>
+                  <div style={{ background: '#020617', padding: '5px 7px', borderRadius: '4px', borderLeft: '3px solid #f43f5e' }}>
                     <div style={{ color: '#fb7185', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <HeartPulse size={11} /> WHO Post-Flood Epidemic Surveillance
+                      <HeartPulse size={11} /> WHO Epidemic Surveillance
                     </div>
                     <div style={{ color: '#cbd5e1' }}>
-                      Waterborne Disease Risk: <strong>{dashboardData.publicDatasets.whoHealth?.postFloodEpidemicRiskScore}</strong>
+                      Risk: <strong>{dashboardData.publicDatasets.whoHealth?.postFloodEpidemicRiskScore}</strong>
                     </div>
                   </div>
                 </div>
@@ -1200,17 +1210,14 @@ export default function App() {
               <div className="card" style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid #ca8a04' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <h3 style={{ color: '#facc15', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Radio size={16} /> LoRa / Satellite Disaster Mesh Packet
+                    <Radio size={15} /> LoRa / Satellite Disaster Mesh
                   </h3>
-                  <span style={{ fontSize: '10px', background: '#854d0e', color: '#fef08a', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                    ZERO INTERNET ACTIVE
+                  <span style={{ fontSize: '9px', background: '#854d0e', color: '#fef08a', padding: '2px 5px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    ZERO INTERNET
                   </span>
                 </div>
-                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 6px 0' }}>
-                  Cellular towers failed. Compressed 128-byte packet ready for transmission over 868MHz LoRa, Ham APRS, or P2P Bluetooth mesh:
-                </p>
-                <div style={{ background: '#020617', padding: '8px', borderRadius: '4px', border: '1px solid #1e293b', fontFamily: 'monospace', fontSize: '10.5px', color: '#38bdf8', wordBreak: 'break-all' }}>
-                  {dashboardData.offlineLoraPacket || `[LORA_MESH_EMERGENCY] LOC:${currentLat.toFixed(2)},${currentLon.toFixed(2)}|TIER:${dashboardData.riskTier || 'GREEN'}|WIND:${dashboardData.liveWindSpeed}KMPH|SURGE:${dashboardData.predictiveModel?.storm_surge_predicted_meters || 0}M|AUTH:NDMA_OFFLINE`}
+                <div style={{ background: '#020617', padding: '6px', borderRadius: '4px', border: '1px solid #1e293b', fontFamily: 'monospace', fontSize: '9.5px', color: '#38bdf8', wordBreak: 'break-all' }}>
+                  {dashboardData.offlineLoraPacket || `[LORA_MESH_EMERGENCY] LOC:${currentLat.toFixed(2)},${currentLon.toFixed(2)}|TIER:${dashboardData.riskTier || 'GREEN'}|WIND:${dashboardData.liveWindSpeed}KMPH|AUTH:NDMA_OFFLINE`}
                 </div>
               </div>
             )}
@@ -1218,45 +1225,38 @@ export default function App() {
             {/* VIIRS Nighttime Lights Blackout Predictor */}
             {dashboardData.viirsNighttimeLights && (
               <div className="card" style={{ background: dashboardData.viirsNighttimeLights.gridCollapseProbabilityPercent >= 70 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(15, 23, 42, 0.95)', border: dashboardData.viirsNighttimeLights.gridCollapseProbabilityPercent >= 70 ? '1px solid #ef4444' : '1px solid #ca8a04' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <h3 style={{ color: '#facc15', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Lightbulb size={16} /> VIIRS Night Lights Blackout Predictor
+                    <Lightbulb size={15} /> VIIRS Night Lights Blackout Risk
                   </h3>
-                  <span style={{ fontSize: '10px', background: '#451a03', color: '#fef08a', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', border: '1px solid #ca8a04' }}>
-                    NOAA VIIRS DNB
+                  <span style={{ fontSize: '9.5px', background: '#451a03', color: '#fef08a', padding: '2px 5px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    NOAA DNB
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', background: '#020617', padding: '8px', borderRadius: '6px', border: '1px solid #1e293b', marginBottom: '8px', textAlign: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', background: '#020617', padding: '6px', borderRadius: '6px', border: '1px solid #1e293b', marginBottom: '6px', textAlign: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>Baseline Radiance</div>
-                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#facc15' }}>
-                      {dashboardData.viirsNighttimeLights.baselineRadianceMean} <span style={{ fontSize: '9px' }}>nW</span>
+                    <div style={{ fontSize: '9.5px', color: '#94a3b8' }}>Baseline</div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#facc15' }}>
+                      {dashboardData.viirsNighttimeLights.baselineRadianceMean} <span style={{ fontSize: '8px' }}>nW</span>
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>Blackout Risk</div>
-                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: dashboardData.viirsNighttimeLights.gridCollapseProbabilityPercent >= 70 ? '#ef4444' : '#10b981' }}>
+                    <div style={{ fontSize: '9.5px', color: '#94a3b8' }}>Blackout</div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: dashboardData.viirsNighttimeLights.gridCollapseProbabilityPercent >= 70 ? '#ef4444' : '#10b981' }}>
                       {dashboardData.viirsNighttimeLights.gridCollapseProbabilityPercent}%
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>Gen Deployment</div>
-                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#38bdf8' }}>
+                    <div style={{ fontSize: '9.5px', color: '#94a3b8' }}>Gen Set</div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#38bdf8' }}>
                       {dashboardData.viirsNighttimeLights.recommendedEmergencyGeneratorsMW} MW
                     </div>
                   </div>
                 </div>
 
-                {dashboardData.viirsNighttimeLights.estimatedDarkPopulation > 0 && (
-                  <div style={{ fontSize: '11px', color: '#fca5a5', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <ZapOff size={13} color="#ef4444" />
-                    <span>Est. Population Facing Total Blackout: <strong>{dashboardData.viirsNighttimeLights.estimatedDarkPopulation.toLocaleString()} citizens</strong></span>
-                  </div>
-                )}
-
-                <div style={{ fontSize: '11px', color: '#cbd5e1', lineHeight: 1.4 }}>
-                  <span style={{ color: '#facc15', fontWeight: 600 }}>Utility Directives:</span> {dashboardData.viirsNighttimeLights.priorityFeederActions}
+                <div style={{ fontSize: '10.5px', color: '#cbd5e1', lineHeight: 1.35 }}>
+                  <span style={{ color: '#facc15', fontWeight: 600 }}>Action:</span> {dashboardData.viirsNighttimeLights.priorityFeederActions}
                 </div>
               </div>
             )}
@@ -1264,59 +1264,46 @@ export default function App() {
             {/* REAL ROAD EVACUATION ROUTING CARD */}
             {dashboardData.evacuationRouting && (
               <div className="card" style={{ background: 'rgba(2, 132, 199, 0.1)', border: '1px solid rgba(56, 189, 248, 0.4)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <h3 style={{ color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Navigation2 size={16} /> Real-Road Evacuation Navigation
+                    <Navigation2 size={15} /> Real-Road Evacuation Navigation
                   </h3>
-                  <span style={{ fontSize: '10px', background: '#0369a1', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                    Live Road Graph
+                  <span style={{ fontSize: '9px', background: '#0369a1', color: '#ffffff', padding: '2px 5px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    Road Graph
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#020617', padding: '8px 10px', borderRadius: '6px', border: '1px solid #1e293b', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#020617', padding: '6px 8px', borderRadius: '6px', border: '1px solid #1e293b', marginBottom: '6px' }}>
                   <div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>Total Road Distance</div>
-                    <div style={{ fontSize: '17px', fontWeight: 'bold', color: '#38bdf8' }}>
+                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>Distance</div>
+                    <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8' }}>
                       {dashboardData.evacuationRouting.totalDistanceKm || 14.8} km
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>Est. Convoy Time</div>
-                    <div style={{ fontSize: '17px', fontWeight: 'bold', color: '#34d399' }}>
+                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>Convoy Time</div>
+                    <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399' }}>
                       {dashboardData.evacuationRouting.estimatedTransitMinutes || 22} mins
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>Destination Haven</div>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#facc15' }}>
-                      {dashboardData.evacuationRouting?.destinationLocation?.elevationMeters || 18.5}m MSL
+                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>Destination</div>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#facc15' }}>
+                      18.5m MSL
                     </div>
                   </div>
                 </div>
 
-                <div style={{ marginBottom: '8px', fontSize: '11px' }}>
-                  <span style={{ color: '#f87171', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '3px' }}>
-                    <AlertOctagon size={12} /> Bypassed Impassable Flood Zones:
-                  </span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                    {dashboardData.evacuationRouting.avoidedFloodHazards?.map((hazard, hIdx) => (
-                      <span key={hIdx} style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#fca5a5', padding: '2px 6px', borderRadius: '3px', fontSize: '10.5px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                        {hazard}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {dashboardData.evacuationRouting.turnByTurnGuidance?.map((step) => (
-                    <div key={step.step} style={{ background: '#020617', padding: '6px 8px', borderRadius: '4px', borderLeft: '3px solid #38bdf8', fontSize: '11.5px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '10.5px', marginBottom: '2px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Milestone size={11} color="#38bdf8" /> Step {step.step} • {step.distance}
+                    <div key={step.step} style={{ background: '#020617', padding: '5px 7px', borderRadius: '4px', borderLeft: '3px solid #38bdf8', fontSize: '10.5px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '9.5px', marginBottom: '2px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Milestone size={10} color="#38bdf8" /> Step {step.step} • {step.distance}
                         </span>
-                        <span style={{ color: '#34d399' }}>Elevation: {step.elevation}</span>
+                        <span style={{ color: '#34d399' }}>{step.elevation}</span>
                       </div>
-                      <div style={{ color: '#e2e8f0', lineHeight: 1.4 }}>
+                      <div style={{ color: '#e2e8f0', lineHeight: 1.35 }}>
                         {step.instruction}
                       </div>
                     </div>
@@ -1327,75 +1314,61 @@ export default function App() {
 
             {/* Dynamic Shelter Capacity & Resources Panel */}
             <div className="card" style={{ background: 'rgba(15, 23, 42, 0.95)', border: dashboardData.shelterNetwork?.reRoutingLogistics?.active ? '1px solid #ef4444' : '1px solid #1e293b' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <h3 style={{ color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Users size={16} /> Dynamic Shelter Capacity & Resources
+                  <Users size={15} /> Shelter Capacity & Resources
                 </h3>
                 <button
                   onClick={handleToggleSurge}
                   style={{
-                    fontSize: '10.5px',
-                    padding: '3px 8px',
+                    fontSize: '9.5px',
+                    padding: '2px 7px',
                     borderRadius: '4px',
                     border: '1px solid #38bdf8',
                     background: evacueeSurgeActive ? '#0284c7' : '#082f49',
                     color: '#ffffff',
                     cursor: 'pointer',
-                    fontWeight: 'bold',
-                    transition: 'all 0.15s ease'
+                    fontWeight: 'bold'
                   }}
-                  title="Simulates 250 arriving citizens to test automatic 90% capacity re-routing"
                 >
-                  {evacueeSurgeActive ? "Surge: +250 Active" : "Simulate Surge (+250)"}
+                  {evacueeSurgeActive ? "+250 Surge Active" : "Simulate (+250)"}
                 </button>
               </div>
 
               {dashboardData.shelterNetwork?.reRoutingLogistics?.active && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.15)', borderLeft: '3px solid #ef4444', padding: '8px', borderRadius: '4px', marginBottom: '10px', fontSize: '11.5px', color: '#fca5a5' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold', color: '#f87171' }}>
-                    <CornerUpRight size={14} /> DIVERSION PROTOCOL ACTIVE
+                <div style={{ background: 'rgba(239, 68, 68, 0.15)', borderLeft: '3px solid #ef4444', padding: '6px 8px', borderRadius: '4px', marginBottom: '8px', fontSize: '10.5px', color: '#fca5a5' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', color: '#f87171' }}>
+                    <CornerUpRight size={12} /> DIVERSION ACTIVE
                   </div>
-                  <div style={{ margin: '3px 0' }}>
-                    Re-routing <strong>{dashboardData.shelterNetwork.reRoutingLogistics.divertedEvacueeCount} evacuees</strong> from {dashboardData.shelterNetwork.reRoutingLogistics.diversionOrigin} to <strong>{dashboardData.shelterNetwork.reRoutingLogistics.diversionDestination}</strong>.
-                  </div>
-                  <div style={{ fontSize: '10.5px', color: '#cbd5e1' }}>
-                    Transit Corridor: {dashboardData.shelterNetwork.reRoutingLogistics.recommendedTransitCorridor}
-                  </div>
+                  <div>Re-routing to <strong>{dashboardData.shelterNetwork.reRoutingLogistics.diversionDestination}</strong></div>
                 </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {dashboardData.shelterNetwork?.shelters?.map((shelter) => (
-                  <div key={shelter.id} style={{ background: '#020617', padding: '8px 10px', borderRadius: '6px', border: '1px solid #1e293b' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                  <div key={shelter.id} style={{ background: '#020617', padding: '6px 8px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
                       <span style={{ fontWeight: 600, color: '#f1f5f9' }}>{shelter.name}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: shelter.occupancyPercentage >= 90 ? '#ef4444' : shelter.occupancyPercentage >= 70 ? '#f59e0b' : '#34d399' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 'bold', color: shelter.occupancyPercentage >= 90 ? '#ef4444' : shelter.occupancyPercentage >= 70 ? '#f59e0b' : '#34d399' }}>
                         {shelter.currentOccupancy} / {shelter.capacity} ({shelter.occupancyPercentage}%)
                       </span>
                     </div>
 
-                    <div style={{ width: '100%', height: '6px', background: '#1e293b', borderRadius: '3px', margin: '6px 0', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '5px', background: '#1e293b', borderRadius: '3px', margin: '4px 0', overflow: 'hidden' }}>
                       <div
                         style={{
                           width: `${Math.min(100, shelter.occupancyPercentage)}%`,
                           height: '100%',
-                          background: shelter.occupancyPercentage >= 90 ? '#ef4444' : shelter.occupancyPercentage >= 70 ? '#f59e0b' : '#10b981',
-                          transition: 'width 0.3s ease'
+                          background: shelter.occupancyPercentage >= 90 ? '#ef4444' : shelter.occupancyPercentage >= 70 ? '#f59e0b' : '#10b981'
                         }}
                       />
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#94a3b8' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Droplets size={11} color="#38bdf8" /> {(shelter.cleanWaterLiters || 0).toLocaleString()} L
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <PackageCheck size={11} color="#34d399" /> {shelter.medicalKits} Kits
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <BatteryCharging size={11} color="#facc15" /> {shelter.backupPowerHours}h Gen
-                      </span>
-                      <span style={{ color: '#cbd5e1' }}>{shelter.elevationMeters}m MSL</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#94a3b8' }}>
+                      <span><Droplets size={10} color="#38bdf8" /> {(shelter.cleanWaterLiters || 0).toLocaleString()} L</span>
+                      <span><PackageCheck size={10} color="#34d399" /> {shelter.medicalKits} Kits</span>
+                      <span><BatteryCharging size={10} color="#facc15" /> {shelter.backupPowerHours}h</span>
+                      <span>{shelter.elevationMeters}m MSL</span>
                     </div>
                   </div>
                 ))}
@@ -1404,86 +1377,76 @@ export default function App() {
 
             {/* Parametric Insurance Liquidity Card */}
             <div className="card" style={{ background: dashboardData.parametricInsurance?.status === "LIQUIDITY_UNLOCKED" ? "rgba(234, 179, 8, 0.12)" : "rgba(15, 23, 42, 0.9)", border: dashboardData.parametricInsurance?.status === "LIQUIDITY_UNLOCKED" ? "1px solid #eab308" : "1px solid #1e293b" }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <h3 style={{ color: '#facc15', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CreditCard size={15} /> Parametric Insurance Liquidity
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <h3 style={{ color: '#facc15', margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <CreditCard size={14} /> Parametric Insurance Escrow
                 </h3>
-                <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: dashboardData.parametricInsurance?.status === "LIQUIDITY_UNLOCKED" ? "#ca8a04" : "#1e293b", color: '#ffffff', fontWeight: 'bold' }}>
+                <span style={{ fontSize: '9px', padding: '2px 5px', borderRadius: '4px', background: dashboardData.parametricInsurance?.status === "LIQUIDITY_UNLOCKED" ? "#ca8a04" : "#1e293b", color: '#ffffff', fontWeight: 'bold' }}>
                   {dashboardData.parametricInsurance?.status}
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '4px' }}>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>Contract: {dashboardData.parametricInsurance?.parametricContractId}</div>
-                  <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '2px' }}>{dashboardData.parametricInsurance?.payoutTier}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2px' }}>
+                <div style={{ fontSize: '10px', color: '#94a3b8' }}>
+                  {dashboardData.parametricInsurance?.payoutTier}
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#facc15' }}>
+                <div style={{ fontSize: '17px', fontWeight: 'bold', color: '#facc15' }}>
                   {dashboardData.parametricInsurance?.disbursementAmountFormatted}
                 </div>
               </div>
-              <p style={{ margin: '8px 0 0 0', fontSize: '11.5px', color: '#94a3b8', lineHeight: 1.4 }}>
-                {dashboardData.parametricInsurance?.actionableDirectives}
-              </p>
             </div>
 
             {/* GEE Sentinel-1 SAR Satellite Hydrology */}
             <div className="card" style={{ background: 'rgba(14, 165, 233, 0.08)', border: '1px solid rgba(14, 165, 233, 0.3)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <h3 style={{ color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Satellite size={15} /> GEE Sentinel-1 SAR Feed
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <h3 style={{ color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Satellite size={14} /> GEE Sentinel-1 SAR Feed
                 </h3>
-                <span style={{ fontSize: '10px', color: '#38bdf8', background: '#082f49', padding: '2px 6px', borderRadius: '4px' }}>
+                <span style={{ fontSize: '9px', color: '#38bdf8', background: '#082f49', padding: '1px 5px', borderRadius: '4px' }}>
                   {dashboardData.geeSatelliteTelemetry?.polarization}
                 </span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11.5px', marginTop: '6px' }}>
-                <div style={{ color: '#94a3b8' }}>Soil Saturation: <strong style={{ color: '#e2e8f0' }}>{dashboardData.geeSatelliteTelemetry?.soilMoistureSaturationPercentage}%</strong></div>
-                <div style={{ color: '#94a3b8' }}>Inundation Signal: <strong style={{ color: '#e2e8f0' }}>{dashboardData.geeSatelliteTelemetry?.waterInundationConfidence}</strong></div>
-              </div>
-              <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8' }}>
-                <span style={{ color: '#38bdf8', fontWeight: 600 }}>Identified Runoff Pathways:</span>
-                <ul style={{ paddingLeft: '16px', margin: '4px 0 0 0' }}>
-                  {dashboardData.geeSatelliteTelemetry?.runoffChokepointsIdentified?.map((choke, idx) => (
-                    <li key={idx}>{choke}</li>
-                  ))}
-                </ul>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '10.5px' }}>
+                <div>Soil Saturation: <strong>{dashboardData.geeSatelliteTelemetry?.soilMoistureSaturationPercentage}%</strong></div>
+                <div>Inundation: <strong>{dashboardData.geeSatelliteTelemetry?.waterInundationConfidence}</strong></div>
               </div>
             </div>
 
             {/* Surge Height Card */}
             <div className="card" style={{ background: `${dashboardData.riskColor || '#10b981'}15`, border: `1px solid ${dashboardData.riskColor || '#10b981'}` }}>
-              <h3 style={{ color: dashboardData.riskColor || '#10b981', margin: '0 0 5px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Waves size={16} /> Hydrodynamic Surge Forecast ({dashboardData.riskTier || "GREEN"} TIER)
-              </h3>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Coupled Regression Output</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: dashboardData.riskColor || '#10b981' }}>
-                  {dashboardData.predictiveModel?.storm_surge_predicted_meters || 0} <span style={{ fontSize: '14px' }}>Meters</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ color: dashboardData.riskColor || '#10b981', margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Waves size={15} /> Surge Forecast
+                  </h3>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>Coupled Regression Output</div>
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: dashboardData.riskColor || '#10b981' }}>
+                  {dashboardData.predictiveModel?.storm_surge_predicted_meters || 0} <span style={{ fontSize: '12px' }}>M</span>
                 </div>
               </div>
             </div>
 
             {/* Impact Analysis */}
             <div className="card">
-              <h3 className="text-cyan"><ShieldCheck size={16} /> Cascading Physical Risk & Runoff Pathways</h3>
-              <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#cbd5e1', margin: 0 }}>
+              <h3 className="text-cyan"><ShieldCheck size={14} /> Physical Risk & Runoff Pathways</h3>
+              <p style={{ fontSize: '11.5px', lineHeight: '1.5', color: '#cbd5e1', margin: '4px 0 0 0' }}>
                 {dashboardData.impactAnalysis}
               </p>
             </div>
 
             {/* Pre-Landfall Infrastructure Hardening Directives */}
             <div className="card" style={{ background: 'rgba(168, 85, 247, 0.08)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-              <h3 style={{ color: '#c084fc', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Wrench size={15} /> Pre-Landfall Infrastructure Hardening
+              <h3 style={{ color: '#c084fc', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Wrench size={14} /> Pre-Landfall Infrastructure Hardening
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 {dashboardData.infrastructureVulnerability?.map((node) => (
-                  <div key={node.id} style={{ fontSize: '12px', background: '#020617', padding: '6px 8px', borderRadius: '4px', borderLeft: `3px solid ${node.color}` }}>
+                  <div key={node.id} style={{ fontSize: '11px', background: '#020617', padding: '5px 7px', borderRadius: '4px', borderLeft: `3px solid ${node.color}` }}>
                     <div style={{ fontWeight: 600, color: '#e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
                       <span>{node.name}</span>
-                      <span style={{ fontSize: '10.5px', color: node.color }}>{node.elevationMeters}m MSL</span>
+                      <span style={{ fontSize: '9.5px', color: node.color }}>{node.elevationMeters}m MSL</span>
                     </div>
-                    <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '3px' }}>
+                    <div style={{ color: '#94a3b8', fontSize: '10px', marginTop: '2px' }}>
                       {node.hardeningProtocol}
                     </div>
                   </div>
@@ -1493,49 +1456,49 @@ export default function App() {
 
             {/* Evacuation Directives */}
             <div className="card">
-              <h3 className="text-emerald"><Navigation size={16} /> Designated Directives (evacuationZones)</h3>
-              <ul style={{ paddingLeft: '18px', margin: 0, color: '#e2e8f0', fontSize: '13px', lineHeight: '1.6' }}>
+              <h3 className="text-emerald"><Navigation size={14} /> Evacuation Directives</h3>
+              <ul style={{ paddingLeft: '16px', margin: '4px 0 0 0', color: '#e2e8f0', fontSize: '11.5px', lineHeight: '1.5' }}>
                 {dashboardData.evacuationZones?.map((zone, idx) => (
-                  <li key={idx} style={{ marginBottom: '6px' }}>{zone}</li>
+                  <li key={idx} style={{ marginBottom: '4px' }}>{zone}</li>
                 ))}
               </ul>
             </div>
 
             {/* Permanent English Base Broadcast */}
             <div className="card" style={{ background: `${dashboardData.riskColor || '#10b981'}15`, border: `1px solid ${dashboardData.riskColor || '#10b981'}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <h3 style={{ color: dashboardData.riskColor || '#10b981', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <BellRing size={16} /> Official NDMA Broadcast (ENGLISH)
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <h3 style={{ color: dashboardData.riskColor || '#10b981', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <BellRing size={14} /> Official NDMA Broadcast (ENGLISH)
                 </h3>
                 <button
                   onClick={() => playAudio(dashboardData.ttsData?.en?.mp3Url, dashboardData.baseWarningMessage, 'en-US')}
                   className="play-btn"
-                  style={{ background: isGreen ? '#065f46' : '#7f1d1d', color: '#fecaca', padding: '4px 8px' }}
+                  style={{ background: isGreen ? '#065f46' : '#7f1d1d', color: '#fecaca', padding: '3px 7px' }}
                 >
-                  <Volume2 size={13} /> {isOfflineActive ? "Speak (Local OS)" : "Play MP3"}
+                  <Volume2 size={12} /> {isOfflineActive ? "Speak" : "Play MP3"}
                 </button>
               </div>
-              <p style={{ fontSize: '12.5px', lineHeight: '1.5', color: isGreen ? '#a7f3d0' : '#fecaca', margin: 0 }}>
+              <p style={{ fontSize: '11.5px', lineHeight: '1.4', color: isGreen ? '#a7f3d0' : '#fecaca', margin: 0 }}>
                 {dashboardData.baseWarningMessage}
               </p>
             </div>
 
-            {/* Dynamic 14-Language Regional Dispatch Selector with Native Language Notification */}
+            {/* Dynamic 14-Language Regional Dispatch Selector */}
             <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <h3 className="text-purple" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Volume2 size={16} /> Regional Dispatch Selector
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <h3 className="text-purple" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Volume2 size={14} /> Regional Dispatch
                   </h3>
-                  <span style={{ fontSize: '10px', background: '#3b0764', color: '#e9d5ff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #7e22ce', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <Languages size={10} /> Auto: Native to Sector
+                  <span style={{ fontSize: '9px', background: '#3b0764', color: '#e9d5ff', padding: '1px 5px', borderRadius: '4px', border: '1px solid #7e22ce' }}>
+                    Auto Native
                   </span>
                 </div>
 
                 <select
                   value={selectedLang}
                   onChange={(e) => setSelectedLang(e.target.value)}
-                  style={{ background: '#1e293b', color: '#f8fafc', border: '1px solid #334155', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                  style={{ background: '#1e293b', color: '#f8fafc', border: '1px solid #334155', padding: '3px 6px', borderRadius: '4px', fontSize: '11px', outline: 'none' }}
                 >
                   {LANGUAGE_OPTIONS.map((opt) => (
                     <option key={opt.id} value={opt.id}>{opt.label}</option>
@@ -1558,10 +1521,10 @@ export default function App() {
                     }
                     className="play-btn"
                   >
-                    <Volume2 size={15} /> {isOfflineActive ? "Speak (Local OS)" : "Play MP3"}
+                    <Volume2 size={13} /> {isOfflineActive ? "Speak" : "Play MP3"}
                   </button>
                 </div>
-                <p style={{ margin: '0', fontSize: '13px', color: '#cbd5e1', lineHeight: '1.5' }}>
+                <p style={{ margin: '0', fontSize: '12px', color: '#cbd5e1', lineHeight: '1.4' }}>
                   {dashboardData.multilingualBroadcasts?.[selectedLang]}
                 </p>
               </div>
@@ -1569,8 +1532,8 @@ export default function App() {
 
             {/* Dialogflow Call-Bot Simulator */}
             <div className="card" style={{ background: '#0f172a', border: '1px solid #1e293b' }}>
-              <h3 style={{ color: '#facc15', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <PhoneCall size={16} /> Dialogflow Call-Bot Simulator
+              <h3 style={{ color: '#facc15', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <PhoneCall size={14} /> Dialogflow Call-Bot Simulator
               </h3>
               <button
                 onClick={() => simulateDialogflowCall("Check safe zone")}
@@ -1580,22 +1543,23 @@ export default function App() {
                   background: '#ca8a04',
                   color: 'white',
                   border: 'none',
-                  padding: '10px',
+                  padding: '8px',
                   borderRadius: '6px',
                   fontWeight: 'bold',
+                  fontSize: '12px',
                   cursor: 'pointer',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '6px'
                 }}
               >
-                {isCalling ? <Activity size={15} className="spinner" /> : <PhoneCall size={15} />}
-                {isCalling ? "Dialing Hotline Fulfillment..." : "Simulate Inbound Voice Call"}
+                {isCalling ? <Activity size={14} className="spinner" /> : <PhoneCall size={14} />}
+                {isCalling ? "Dialing..." : "Simulate Inbound Voice Call"}
               </button>
               {dialogflowResponse && (
-                <div style={{ marginTop: '12px', background: '#020617', padding: '12px', borderRadius: '6px', borderLeft: '3px solid #facc15' }}>
-                  <p style={{ margin: 0, fontSize: '12.5px', color: '#fef08a', lineHeight: '1.5' }}>"{dialogflowResponse}"</p>
+                <div style={{ marginTop: '8px', background: '#020617', padding: '8px', borderRadius: '6px', borderLeft: '3px solid #facc15' }}>
+                  <p style={{ margin: 0, fontSize: '11.5px', color: '#fef08a', lineHeight: '1.4' }}>"{dialogflowResponse}"</p>
                 </div>
               )}
             </div>

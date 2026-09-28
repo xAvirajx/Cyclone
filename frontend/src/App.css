@@ -1,184 +1,195 @@
+/* Base Command Hub Reset */
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 body, html {
-  width: 100%;
+  margin: 0;
+  padding: 0;
   height: 100%;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: #020617;
   color: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   overflow-x: hidden;
 }
 
 /* Master Layout */
 .dashboard {
   display: flex;
-  flex-direction: row;
-  width: 100vw;
   height: 100vh;
+  width: 100vw;
   overflow: hidden;
   background-color: #020617;
 }
 
-/* Map Panel (Desktop) */
+/* Map Panel (Left Desktop, Top/Full on Mobile) */
 .map-panel {
-  flex: 1;
-  position: relative;
+  flex: 1.25;
   height: 100%;
-  min-width: 0;
+  position: relative;
   display: flex;
   flex-direction: column;
+  background-color: #020617;
 }
 
-/* Header Overlay on Map */
+/* Header Overlay */
 .header-overlay {
   position: absolute;
   top: 10px;
   left: 10px;
   right: 10px;
   z-index: 1000;
-  background: rgba(15, 23, 42, 0.92);
-  backdrop-filter: blur(8px);
-  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.85);
   border-radius: 8px;
-  border: 1px solid rgba(51, 65, 85, 0.7);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  padding: 8px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .header-top-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
 }
 
+/* Single-Line Horizontal Swipeable Carousel for Toggle Buttons */
 .header-button-group {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 0;
 }
 
-.header-sector-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  background: #020617;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid #1e293b;
+.header-button-group::-webkit-scrollbar {
+  display: none;
 }
 
 .toggle-layer-btn {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 6px;
+  gap: 5px;
   font-size: 11px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  padding: 5px 9px;
+  border-radius: 6px;
   border: 1px solid #334155;
   background: #1e293b;
   color: #94a3b8;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
 }
 
-.toggle-layer-btn:hover {
-  filter: brightness(1.15);
+.toggle-layer-btn:active {
+  transform: scale(0.96);
 }
 
-/* Action Button */
-.action-button {
-  position: absolute;
-  bottom: 48px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
+/* Consolidated Single-Row Sector & Voice Bar */
+.header-sector-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 11px 18px;
-  border: none;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-  transition: transform 0.15s ease, filter 0.15s ease;
-  width: calc(100% - 24px);
-  max-width: 420px;
+  gap: 6px;
+  width: 100%;
 }
 
-.action-button:hover:not(:disabled) {
-  transform: translateX(-50%) translateY(-1px);
-  filter: brightness(1.1);
+.header-sector-row select {
+  flex: 1;
+  min-width: 0;
 }
 
-.action-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-/* Map Legend */
+/* Bottom Floating Map Legend: Horizontal Swipe */
 .map-legend {
   position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 6px 12px;
-  background: rgba(2, 6, 23, 0.92);
-  backdrop-filter: blur(4px);
-  padding: 6px 12px;
+  bottom: 60px;
+  left: 10px;
+  right: 10px;
+  z-index: 999;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(51, 65, 85, 0.7);
   border-radius: 6px;
-  border: 1px solid rgba(51, 65, 85, 0.6);
-  width: max-content;
-  max-width: calc(100% - 20px);
-  pointer-events: none;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+
+.map-legend::-webkit-scrollbar {
+  display: none;
 }
 
 .legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 11px;
   color: #cbd5e1;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
 }
 
-/* Side Panel (Desktop) */
+/* Primary Action Button */
+.action-button {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.action-button:active {
+  transform: scale(0.98);
+}
+
+/* Side Panel (Intel, Telemetry & Directives) */
 .side-panel {
-  width: 440px;
+  flex: 0.95;
   height: 100%;
   overflow-y: auto;
-  background: #0b132b;
-  padding: 16px;
-  border-left: 1px solid #1e293b;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-sizing: border-box;
+  gap: 10px;
+  background-color: #020617;
+  border-left: 1px solid #1e293b;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #020617;
 }
 
 /* Telemetry Header Bar */
@@ -186,177 +197,171 @@ body, html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  font-size: 11.5px;
   background: #0f172a;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 6px;
   border: 1px solid #1e293b;
 }
 
-/* Generic Card */
+/* Universal Dashboard Cards */
 .card {
   background: #0f172a;
-  border-radius: 8px;
-  padding: 14px;
   border: 1px solid #1e293b;
-  box-sizing: border-box;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .card h3 {
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 13px;
+  margin: 0;
 }
 
-/* Regional Language Selector Box */
+/* Typography Helpers */
+.text-cyan { color: #38bdf8; }
+.text-emerald { color: #34d399; }
+.text-purple { color: #c084fc; }
+
+/* Language Box */
 .lang-box {
-  background: #020617;
-  border: 1px solid #1e293b;
-  border-radius: 6px;
   padding: 10px;
-  box-sizing: border-box;
+  border-radius: 6px;
 }
 
 .lang-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .lang-label {
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
+  font-size: 11.5px;
+  font-weight: 700;
 }
 
 .play-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: #1e293b;
-  color: #38bdf8;
-  border: 1px solid #334155;
-  padding: 5px 10px;
-  border-radius: 5px;
   font-size: 11px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.play-btn:hover {
-  background: #0284c7;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #38bdf8;
+  background: #0369a1;
   color: #ffffff;
+  cursor: pointer;
 }
 
+.play-btn:active {
+  transform: scale(0.96);
+}
+
+/* Loading Spinner Animation */
 .spinner {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-/* ========================================================= */
-/* RESPONSIVE MOBILE OPTIMIZATIONS (PORTRAIT & SMALL SCREENS)*/
-/* ========================================================= */
-@media (max-width: 900px) {
+/* ============================================================== */
+/* MOBILE OPTIMIZATIONS (Screen width <= 768px)                   */
+/* ============================================================== */
+@media (max-width: 768px) {
   .dashboard {
     flex-direction: column;
-    height: auto;
-    min-height: 100vh;
+    height: 100vh;
     overflow-y: auto;
-    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
+  /* Provide a dedicated viewing area for the map on phones */
   .map-panel {
-    width: 100%;
-    height: 52vh;
-    min-height: 380px;
     flex: none;
+    height: 54vh;
+    min-height: 380px;
+    width: 100%;
     position: relative;
+    border-bottom: 2px solid #1e293b;
   }
 
+  /* Compact header on mobile */
   .header-overlay {
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    padding: 8px 10px;
-    max-width: calc(100% - 16px);
-  }
-
-  .header-top-row {
-    flex-direction: column;
-    align-items: flex-start;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    padding: 6px 8px;
     gap: 6px;
   }
 
+  .header-overlay h1 {
+    font-size: 14px !important;
+  }
+
+  .header-overlay p {
+    font-size: 9.5px !important;
+  }
+
+  /* Keep toggle buttons on a single glide row */
   .header-button-group {
-    width: 100%;
-    justify-content: flex-start;
+    padding-bottom: 1px;
+    gap: 4px;
   }
 
+  .toggle-layer-btn {
+    font-size: 10px;
+    padding: 4px 7px;
+  }
+
+  /* Keep Sector, Locate, and Voice in a compact single row */
   .header-sector-row {
-    width: 100%;
-    padding: 6px 8px;
+    gap: 4px;
   }
 
-  .action-button {
-    bottom: 42px;
-    width: calc(100% - 20px);
-    font-size: 12px;
-    padding: 9px 12px;
+  .header-sector-row select {
+    font-size: 11px !important;
+    padding: 4px 6px !important;
   }
 
+  /* Map Legend sits just above the action button */
   .map-legend {
-    bottom: 6px;
+    bottom: 50px;
+    left: 6px;
+    right: 6px;
     padding: 4px 8px;
-    gap: 4px 8px;
-    max-width: calc(100% - 16px);
+    font-size: 10px;
+    gap: 10px;
   }
 
   .legend-item {
     font-size: 10px;
   }
 
+  /* Evaluate Button */
+  .action-button {
+    bottom: 6px;
+    left: 6px;
+    right: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  /* Telemetry Panel flows naturally beneath the map without cramping */
   .side-panel {
-    width: 100%;
+    flex: none;
     height: auto;
     overflow-y: visible;
     border-left: none;
-    border-top: 2px solid #1e293b;
-    padding: 14px 10px;
-  }
-}
-
-/* Landscape Mode on Phones */
-@media (max-height: 550px) and (orientation: landscape) {
-  .dashboard {
-    flex-direction: row;
-    height: 100vh;
-    overflow: hidden;
+    padding: 10px 8px 40px 8px;
   }
 
-  .map-panel {
-    height: 100%;
-    flex: 1;
-  }
-
-  .side-panel {
-    width: 340px;
-    height: 100%;
-    overflow-y: auto;
-  }
-
-  .action-button {
-    bottom: 38px;
-    padding: 8px 14px;
-    font-size: 11.5px;
-  }
-
-  .map-legend {
-    bottom: 4px;
-    padding: 3px 8px;
+  .card {
+    padding: 8px 10px;
   }
 }
