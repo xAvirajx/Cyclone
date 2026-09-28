@@ -48,7 +48,7 @@ const authenticateRequest = (req, res, next) => {
   });
 };
 
-// Resilient HTTPS Request Helper
+// Resilient HTTPS Request Helper with Non-Blocking 4-Second Timeout
 const safeFetchJson = (url, customHeaders = {}) => {
   return new Promise((resolve) => {
     try {
@@ -56,12 +56,13 @@ const safeFetchJson = (url, customHeaders = {}) => {
       const options = {
         hostname: urlObj.hostname,
         path: urlObj.pathname + urlObj.search,
+        timeout: 4000,
         headers: {
           "User-Agent": "CycloneResilienceCommandHub/2026.1 (DisasterResponseEngine)",
           ...customHeaders
         }
       };
-      https.get(options, (resp) => {
+      const req = https.get(options, (resp) => {
         let data = "";
         resp.on("data", (chunk) => {
           data += chunk;
@@ -73,7 +74,12 @@ const safeFetchJson = (url, customHeaders = {}) => {
             resolve(null);
           }
         });
-      }).on("error", () => {
+      });
+      req.on("timeout", () => {
+        req.destroy();
+        resolve(null);
+      });
+      req.on("error", () => {
         resolve(null);
       });
     } catch (err) {
@@ -379,7 +385,8 @@ const calculateRealRoadEvacuationRoute = async (targetLat, targetLon, destinatio
     }
   }
 
-  if (realRoadWaypoints.length === 0) {
+  if (realRoadWaypoints.length < 2) {
+    realRoadWaypoints = [];
     const dLat = (destLat - targetLat) / 25;
     const dLon = (destLon - targetLon) / 25;
     for (let i = 0; i <= 25; i++) {
@@ -970,7 +977,7 @@ Requirements: Explicitly describe the power grid collapse vulnerability and real
           ? `NDMA ରିପୋର୍ଟ: ବିଦ୍ୟୁତ୍ ଗ୍ରୀଡ୍ ସୁରକ୍ଷିତ ଅଛି।`
           : `ଜରୁରୀ ଏନଡିଏମଏ ବିପର୍ଯ୍ୟୟ ସତର୍କତା: ହେଭେନ ଗାମା ଯାଆନ୍ତୁ।`,
         ml: riskTier === "GREEN"
-          ? `NDMA റിപ്പോർട്ട്: വൈദ്യുതി ശൃംഖല സുരക്ഷിതമാണ്.`
+          ? `NDMA റിപ്പോർട്ട്: വൈദ്യുതി ശൃംಖല സുരക്ഷിതമാണ്.`
           : `അടിയന്തര NDMA ദുരന്ത മുന്നറിയിപ്പ്: ഹെവൻ ഗാമയിലേക്ക് പോവുക.`,
         pa: riskTier === "GREEN"
           ? `NDMA ਰਿਪੋਰਟ: ਬਿਜਲੀ ਗਰਿੱਡ ਆਮ ਵਾਂਗ ਹੈ।`
