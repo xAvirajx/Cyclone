@@ -136,6 +136,13 @@ export default function App() {
   const [isCalling, setIsCalling] = useState(false);
   const [selectedLang, setSelectedLang] = useState('gu');
 
+  // New State for Transport Selection
+  const [transportMode, setTransportMode] = useState('car'); // 'car', 'bike', 'truck', 'walking'
+
+  // New State for Modal Countdown Logic
+  const [blackModalVisible, setBlackModalVisible] = useState(false);
+  const [modalCountdown, setModalCountdown] = useState(7);
+
   // Speech-to-Text State
   const [isListening, setIsListening] = useState(false);
   const [speechTranscript, setSpeechTranscript] = useState("");
@@ -162,6 +169,10 @@ export default function App() {
 
   useEffect(() => {
     if (dashboardData && dashboardData.riskTier === 'BLACK') {
+      // Trigger the Modal and Start Countdown
+      setBlackModalVisible(true);
+      setModalCountdown(7);
+
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification("NDMA ALERT: CATEGORY 5 CYCLONE", {
           body: `3.5m Storm Surge Expected in ${currentLocationName}. Evacuate immediately to Haven Gamma.`,
@@ -175,6 +186,19 @@ export default function App() {
       );
     }
   }, [dashboardData?.riskTier]); // ONLY fires when risk flips to BLACK
+
+  // Timer Effect for Modal Dismissal
+  useEffect(() => {
+    let timer;
+    if (blackModalVisible && modalCountdown > 0) {
+      timer = setInterval(() => {
+        setModalCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (modalCountdown === 0) {
+      setBlackModalVisible(false);
+    }
+    return () => clearInterval(timer);
+  }, [blackModalVisible, modalCountdown]);
 
   // ============================================================================
   // FULLSCREEN MAP LOGIC (MOBILE & LAPTOP SUPPORT)
@@ -368,18 +392,14 @@ export default function App() {
   };
 
   const runOfflineEdgePipeline = async (surgeActive) => {
-    // ---------------------------------------------------------------------------------
-    // UPDATED BLACK TIER LOGIC: 245 km/h triggers the "Super Cyclone" override
-    // ---------------------------------------------------------------------------------
-    const effectiveWind = simulationStressTest ? 245 : 22;
-    const effectivePressure = simulationStressTest ? 915 : 1012;
+    const effectiveWind = simulationStressTest ? 145 : 22;
+    const effectivePressure = simulationStressTest ? 965 : 1012;
     const effectiveRainfall = simulationStressTest ? 180 : 2.5;
     const surgeHeight = runOfflineSurgeModel(effectiveWind, effectivePressure);
 
-    const isBlack = effectiveWind > 220 || effectivePressure < 920;
     const isRed = effectiveWind >= 88 || surgeHeight >= 2.5;
-    const riskTier = isBlack ? "BLACK" : isRed ? "RED" : effectiveWind >= 50 ? "ORANGE" : effectiveWind >= 30 ? "YELLOW" : "GREEN";
-    const riskColor = isBlack ? "#7f1d1d" : isRed ? "#ef4444" : riskTier === "ORANGE" ? "#f97316" : riskTier === "YELLOW" ? "#eab308" : "#10b981";
+    const riskTier = isRed ? "RED" : effectiveWind >= 50 ? "ORANGE" : effectiveWind >= 30 ? "YELLOW" : "GREEN";
+    const riskColor = isRed ? "#ef4444" : riskTier === "ORANGE" ? "#f97316" : riskTier === "YELLOW" ? "#eab308" : "#10b981";
 
     const flip = currentLon < 77 ? -1 : 1;
     const destLat = currentLat - 0.07;
@@ -387,7 +407,7 @@ export default function App() {
 
     let realRoadWaypoints = [];
     let routeDistanceKm = 14.8;
-    let transitMins = isRed || isBlack ? 38 : 22;
+    let transitMins = isRed ? 38 : 22;
     let turnSteps = [
       { step: 1, instruction: "Head southwest away from coastal frontline on Collector Road.", distance: "1.8 km", elevation: "5.2m MSL" },
       { step: 2, instruction: "Turn right onto Arterial Highway Bypass (avoiding submerged Km-42).", distance: "4.2 km", elevation: "9.8m MSL" },
@@ -403,7 +423,7 @@ export default function App() {
           realRoadWaypoints = osrmData.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
           routeDistanceKm = parseFloat((osrmData.routes[0].distance / 1000).toFixed(1));
           transitMins = Math.round(osrmData.routes[0].duration / 60);
-          if (isRed || isBlack) transitMins = Math.round(transitMins * 1.4);
+          if (isRed) transitMins = Math.round(transitMins * 1.4);
           if (osrmData.routes[0].legs && osrmData.routes[0].legs[0] && osrmData.routes[0].legs[0].steps) {
             turnSteps = osrmData.routes[0].legs[0].steps
               .filter(s => s.name || s.maneuver?.type)
@@ -444,11 +464,9 @@ export default function App() {
     const shelterOccupancyAlpha = surgeActive ? 935 : 680;
     const isShelterFull = shelterOccupancyAlpha >= 900;
 
-    const baseWarning = isBlack 
-      ? `URGENT CATEGORY 5 OVERRIDE: ${currentLocationName} is facing a super cyclone (${effectiveWind} km/h). Immediate evacuation to Haven Gamma required.`
-      : isRed
-        ? `URGENT OFFLINE NDMA ALERT: ${currentLocationName} is facing imminent cyclone landfall with ${effectiveWind} km/h winds and ${surgeHeight}m surge. Follow inland real-road bypass to Haven Gamma.`
-        : `OFFLINE NDMA STATUS: ${currentLocationName} conditions are calm (${effectiveWind} km/h). Safe shelter havens monitored.`;
+    const baseWarning = isRed
+      ? `URGENT OFFLINE NDMA ALERT: ${currentLocationName} is facing imminent cyclone landfall with ${effectiveWind} km/h winds and ${surgeHeight}m surge. Follow inland real-road bypass to Haven Gamma.`
+      : `OFFLINE NDMA STATUS: ${currentLocationName} conditions are calm (${effectiveWind} km/h). Safe shelter havens monitored.`;
 
     const loraPacket = `[LORA_MESH_EMERGENCY] LOC:${currentLat.toFixed(2)},${currentLon.toFixed(2)}|TIER:${riskTier}|WIND:${effectiveWind}KMPH|SURGE:${surgeHeight}M|DEST:GAMMA_HAVEN_18MSL|ROUTING:REAL_ROAD_BYPASS|AUTH:NDMA_OFFLINE_SIG`;
 
@@ -477,9 +495,9 @@ export default function App() {
         modelDisplayName: "Vertex_AI_AutoML_Edge_Simulated",
         deployedModelId: "deployed-automl-damage-model-01",
         predictionScores: {
-          catastrophic_inundation_prob: isBlack || isRed ? 0.94 : 0.08,
-          structural_failure_prob: isBlack || isRed ? 0.82 : 0.06,
-          grid_tripping_prob: isBlack || isRed ? 0.96 : 0.09
+          catastrophic_inundation_prob: isRed ? 0.94 : 0.08,
+          structural_failure_prob: isRed ? 0.82 : 0.06,
+          grid_tripping_prob: isRed ? 0.96 : 0.09
         }
       },
       bigqueryHistory: {
@@ -496,8 +514,8 @@ export default function App() {
         imdBulletin: {
           agency: "India Meteorological Department (IMD) - Ministry of Earth Sciences",
           bulletinNo: "IMD/CYCLONE/2026/BOB-AS-09",
-          coastalWarningStatus: isBlack || isRed ? "RED MESSAGE: GREAT DANGER SIGNAL NO. 10 HOISTED" : "GREEN ALL-CLEAR ROUTINE ADVISORY",
-          stormCategory: isBlack ? "SUPER CYCLONIC STORM (SuCS)" : isRed ? "Very Severe Cyclonic Storm (VSCS)" : "Deep Depression / Nominal Wind",
+          coastalWarningStatus: isRed ? "RED MESSAGE: GREAT DANGER SIGNAL NO. 10 HOISTED" : "GREEN ALL-CLEAR ROUTINE ADVISORY",
+          stormCategory: isRed ? "Very Severe Cyclonic Storm (VSCS)" : "Deep Depression / Nominal Wind",
           referenceStation: currentLocationName
         },
         dataGovIn: {
@@ -510,16 +528,16 @@ export default function App() {
         faoAgriculture: {
           agency: "Food and Agriculture Organization (FAO) - Agro-Met Indicators",
           primaryCropStage: "Kharif Paddy & Coastal Groundnut Maturity Stage",
-          vulnerableCropAcreageHectares: isBlack || isRed ? 42500 : 1200,
-          salineWaterloggedSoilHazard: isBlack || isRed ? "CRITICAL SALINE CONTAMINATION THREAT" : "NOMINAL DRAINAGE CAPACITY",
+          vulnerableCropAcreageHectares: isRed ? 42500 : 1200,
+          salineWaterloggedSoilHazard: isRed ? "CRITICAL SALINE CONTAMINATION THREAT" : "NOMINAL DRAINAGE CAPACITY",
           recommendedMitigation: "Pre-harvest immediate drainage pumping and saline barrier sandbagging."
         },
         whoHealth: {
           agency: "World Health Organization (WHO) - Health Emergency Programme",
-          postFloodEpidemicRiskScore: isBlack || isRed ? "HIGH (Level 4 Surveillance Required)" : "LOW (Baseline Monitoring)",
+          postFloodEpidemicRiskScore: isRed ? "HIGH (Level 4 Surveillance Required)" : "LOW (Baseline Monitoring)",
           monitoredPathogens: ["Vibrio cholerae (Cholera)", "Leptospira interrogans", "Dengue/Malaria vector vectors"],
-          emergencyWaterPurificationTabletsNeeded: isBlack || isRed ? 250000 : 10000,
-          mobileHealthTriageTeamsDispatched: isBlack || isRed ? 12 : 2
+          emergencyWaterPurificationTabletsNeeded: isRed ? 250000 : 10000,
+          mobileHealthTriageTeamsDispatched: isRed ? 12 : 2
         }
       },
       geeSatelliteTelemetry: {
@@ -527,8 +545,8 @@ export default function App() {
         instrument: "Synthetic Aperture Radar (SAR)",
         polarization: "VV + VH C-Band",
         groundSamplingDistanceMeters: 10,
-        soilMoistureSaturationPercentage: isBlack || isRed ? 94 : 38,
-        waterInundationConfidence: isBlack || isRed ? "0.95 (High Inundation Extent)" : "0.02 (Dry Baseline)",
+        soilMoistureSaturationPercentage: isRed ? 94 : 38,
+        waterInundationConfidence: isRed ? "0.95 (High Inundation Extent)" : "0.02 (Dry Baseline)",
         runoffChokepointsIdentified: [
           `${currentLocationName} Coastal Outfall Confluence`,
           `Km-42 Arterial Highway Sluice Underpass`
@@ -536,20 +554,20 @@ export default function App() {
       },
       parametricInsurance: {
         parametricContractId: `PARAM-INS-OFFLINE-${currentLocationName.toUpperCase().replace(/[^A-Z]/g, "")}`,
-        status: isBlack || isRed ? "LIQUIDITY_UNLOCKED" : "MONITORING_ESCROW",
-        payoutTier: isBlack || isRed ? "TIER 1: EMERGENCY CAT DISBURSEMENT" : "ZERO DISBURSEMENT",
-        disbursementAmountFormatted: isBlack || isRed ? "₹5.0 Crore" : "₹0.00",
-        actionableDirectives: isBlack || isRed ? "Immediate liquidity unlocked for municipal fuel and emergency food rations." : "Escrow secure."
+        status: isRed ? "LIQUIDITY_UNLOCKED" : "MONITORING_ESCROW",
+        payoutTier: isRed ? "TIER 1: EMERGENCY CAT DISBURSEMENT" : "ZERO DISBURSEMENT",
+        disbursementAmountFormatted: isRed ? "₹5.0 Crore" : "₹0.00",
+        actionableDirectives: isRed ? "Immediate liquidity unlocked for municipal fuel and emergency food rations." : "Escrow secure."
       },
       viirsNighttimeLights: {
         baselineRadianceMean: 48.6,
-        gridCollapseProbabilityPercent: isBlack || isRed ? 94 : 8,
-        estimatedDarkPopulation: isBlack || isRed ? 420000 : 0,
-        recommendedEmergencyGeneratorsMW: isBlack || isRed ? 8.5 : 0.5,
-        priorityFeederActions: isBlack || isRed ? "Grid collapse imminent on 33kV lines. Deploy auxiliary mobile generators to Haven Gamma." : "Grid operational.",
+        gridCollapseProbabilityPercent: isRed ? 94 : 8,
+        estimatedDarkPopulation: isRed ? 420000 : 0,
+        recommendedEmergencyGeneratorsMW: isRed ? 8.5 : 0.5,
+        priorityFeederActions: isRed ? "Grid collapse imminent on 33kV lines. Deploy auxiliary mobile generators to Haven Gamma." : "Grid operational.",
         viirsGridPoints: [
-          { id: "V1", name: "Coastal Commercial Grid", coordinates: [currentLat + 0.015, currentLon + (0.02 * flip)], baselineRadiance: 52.4, postStormRadianceForecast: isBlack || isRed ? 1.2 : 48.0, blackoutRiskPercent: isBlack || isRed ? 96 : 12, substationStatus: isBlack || isRed ? "FLOODED" : "NORMAL", color: isBlack || isRed ? "#ef4444" : "#eab308" },
-          { id: "V2", name: "Central Urban Hospital Grid", coordinates: [currentLat - 0.01, currentLon + (0.01 * flip)], baselineRadiance: 68.1, postStormRadianceForecast: isBlack || isRed ? 14.5 : 65.0, blackoutRiskPercent: isBlack || isRed ? 78 : 8, substationStatus: isBlack || isRed ? "ISOLATED" : "NORMAL", color: isBlack || isRed ? "#f97316" : "#eab308" },
+          { id: "V1", name: "Coastal Commercial Grid", coordinates: [currentLat + 0.015, currentLon + (0.02 * flip)], baselineRadiance: 52.4, postStormRadianceForecast: isRed ? 1.2 : 48.0, blackoutRiskPercent: isRed ? 96 : 12, substationStatus: isRed ? "FLOODED" : "NORMAL", color: isRed ? "#ef4444" : "#eab308" },
+          { id: "V2", name: "Central Urban Hospital Grid", coordinates: [currentLat - 0.01, currentLon + (0.01 * flip)], baselineRadiance: 68.1, postStormRadianceForecast: isRed ? 14.5 : 65.0, blackoutRiskPercent: isRed ? 78 : 8, substationStatus: isRed ? "ISOLATED" : "NORMAL", color: isRed ? "#f97316" : "#eab308" },
           { id: "V3", name: "Haven Ridge Sector", coordinates: [destLat, destLon], baselineRadiance: 24.3, postStormRadianceForecast: 22.8, blackoutRiskPercent: 12, substationStatus: "STABLE_ENERGIZED", color: "#10b981" }
         ]
       },
@@ -587,32 +605,32 @@ export default function App() {
         turnByTurnGuidance: turnSteps
       },
       infrastructureVulnerability: [
-        { id: "I1", name: `${currentLocationName} District Hospital`, category: "Healthcare", coordinates: { lat: currentLat + 0.03, lon: currentLon + (0.04 * flip) }, elevationMeters: 4.2, status: isBlack || isRed ? "CRITICAL INUNDATION" : "OPERATIONAL", color: isBlack || isRed ? "#ef4444" : "#10b981", hardeningProtocol: "Deploy mobile flood-gates, start rooftop backup generators." },
-        { id: "I2", name: `${currentLocationName} 220kV Substation`, category: "Power Grid", coordinates: { lat: currentLat - 0.04, lon: currentLon + (0.05 * flip) }, elevationMeters: 2.8, status: isBlack || isRed ? "DE-ENERGIZED" : "OPERATIONAL", color: isBlack || isRed ? "#ef4444" : "#10b981", hardeningProtocol: "De-energize coastal feeders to prevent transformer flashover." }
+        { id: "I1", name: `${currentLocationName} District Hospital`, category: "Healthcare", coordinates: { lat: currentLat + 0.03, lon: currentLon + (0.04 * flip) }, elevationMeters: 4.2, status: isRed ? "CRITICAL INUNDATION" : "OPERATIONAL", color: isRed ? "#ef4444" : "#10b981", hardeningProtocol: "Deploy mobile flood-gates, start rooftop backup generators." },
+        { id: "I2", name: `${currentLocationName} 220kV Substation`, category: "Power Grid", coordinates: { lat: currentLat - 0.04, lon: currentLon + (0.05 * flip) }, elevationMeters: 2.8, status: isRed ? "DE-ENERGIZED" : "OPERATIONAL", color: isRed ? "#ef4444" : "#10b981", hardeningProtocol: "De-energize coastal feeders to prevent transformer flashover." }
       ],
-      impactAnalysis: isBlack || isRed
+      impactAnalysis: isRed
         ? `[OFFLINE COMPUTED DIRECTIVE] Telemetry and hydrodynamic surge models project a ${surgeHeight}m surge in ${currentLocationName}. Coastal roads are impassable. VIIRS models indicate 94% blackout probability. Follow the computed real-road bypass to Haven Gamma (>18m MSL).`
         : `[OFFLINE COMPUTED DIRECTIVE] Atmospheric telemetry in ${currentLocationName} is within safe thresholds. Real-road navigation to Haven Gamma is fully open along standard highway corridors.`,
-      evacuationZones: isBlack || isRed
+      evacuationZones: isRed
         ? [`Zone Red: Coastal Perimeter (<4m MSL) - Mandatory Evacuation to Haven Gamma`, `Zone Orange: River Inundation Floodways`]
         : [`Zone Green: All clear in current sector`],
       baseWarningMessage: baseWarning,
       multilingualBroadcasts: {
         en: baseWarning,
-        hi: isBlack || isRed ? `एनडीएमए आपातकालीन चेतावनी: ${currentLocationName} में भारी चक्रवात। वास्तविक सड़क मार्ग से हेवन गामा पहुंचें।` : `एनडीएमए रिपोर्ट: ${currentLocationName} में मौसम सुरक्षित है।`,
-        gu: isBlack || isRed ? `તાકીદની NDMA આપત્તિ ચેતવણી: ${currentLocationName} માં વાવાઝોડું. વાસ્તવિક રોડ બાયપાસ દ્વારા હેવન ગામા પહોંચો.` : `NDMA અહેવાલ: ${currentLocationName} માં હવામાન સલામત છે.`,
-        bn: isBlack || isRed ? `এনডিএমএ সতর্কতা: ${currentLocationName} এলাকায় ঘূর্ণিঝড়। নিরাপদ সড়ক পথ ধরে হ্যাভেন গামায় যান।` : `এনডিএমএ রিপোর্ট: এলাকা নিরাপদ।`,
-        te: isBlack || isRed ? `NDMA హెచ్చరిక: రోడ్డు బైపాస్ ద్వారా హెవెన్ గామాకు వెళ్లండి.` : `వాతావరణం సురక్షితం.`,
-        mr: isBlack || isRed ? `NDMA आपत्ती इशारा: सुरक्षित रस्ता मार्गाने हेवन गामाकडे जा.` : `हवामान सामान्य आहे.`,
-        ta: isBlack || isRed ? `NDMA எச்சரிக்கை: பாதுகாப்பான சாலை வழித்தடத்தில் புகலிடம் காமாவுக்கு செல்லவும்.` : `பகுதி பாதுகாப்பானது.`,
-        kn: isBlack || isRed ? `NDMA ಎಚ್ಚರಿಕೆ: ನೈಜ ರಸ್ತೆ ಬೈಪಾಸ್ ಮೂಲಕ ಹೆವೆನ್ ಗಾಮಾಗೆ ತೆರಳಿ.` : `ಸುರಕ್ಷಿತವಾಗಿದೆ.`,
-        or: isBlack || isRed ? `NDMA ବାତ୍ୟା ସତର୍କତା: ସୁରକ୍ଷିତ ବାଇପାସ୍ ରାସ୍ତା ଦେଇ ହେଭେନ ଗାମା ଯାଆନ୍ତୁ।` : `ଅଞ୍ଚଳ ସୁରକ୍ଷିତ।`,
-        ml: isBlack || isRed ? `NDMA മുന്നറിയിപ്പ്: സുരക്ഷിതമായ റോഡ് ബൈപാസ് വഴി ഹെവൻ ഗാമയിലേക്ക് പോവുക.` : `സുരക്ഷിതമാണ്.`,
-        pa: isBlack || isRed ? `NDMA ਆਫ਼ਤ ਚੇਤਾਵਨੀ: ਸੁਰੱਖਿਅਤ ਸੜਕ ਰੂਟ ਰਾਹੀਂ ਹੈਵਨ ਗਾਮਾ ਪਹੁੰਚੋ।` : `ਸੁਰੱਖਿਅਤ ਹੈ।`,
-        pt: isBlack || isRed ? `ALERTA NDMA: Ciclone iminente. Siga pela rota rodoviária real até o Refúgio Gama.` : `Normal.`,
-        ru: isBlack || isRed ? `ПРЕДУПРЕЖДЕНИЕ NDMA: Следуйте реальным дорожным путем в Убежище Гамма.` : `Норма.`,
-        zh: isBlack || isRed ? `紧急 NDMA 灾害预警：请沿实际测绘公路撤离至伽马避难所。` : `电力与天气一切正常。`,
-        af: isBlack || isRed ? `DRINGENDE NDMA WAARSKUWING: Volg die padverbypad na Toevlugsoord Gamma.` : `Kragtoevoer is stabiel.`
+        hi: isRed ? `एनडीएमए आपातकालीन चेतावनी: ${currentLocationName} में भारी चक्रवात। वास्तविक सड़क मार्ग से हेवन गामा पहुंचें।` : `एनडीएमए रिपोर्ट: ${currentLocationName} में मौसम सुरक्षित है।`,
+        gu: isRed ? `તાકીદની NDMA આપત્તિ ચેતવણી: ${currentLocationName} માં વાવાઝોડું. વાસ્તવિક રોડ બાયપાસ દ્વારા હેવન ગામા પહોંચો.` : `NDMA અહેવાલ: ${currentLocationName} માં હવામાન સલામત છે.`,
+        bn: isRed ? `এনডিএমএ সতর্কতা: ${currentLocationName} এলাকায় ঘূর্ণিঝড়। নিরাপদ সড়ক পথ ধরে হ্যাভেন গামায় যান।` : `এনডিএমএ রিপোর্ট: এলাকা নিরাপদ।`,
+        te: isRed ? `NDMA హెచ్చరిక: రోడ్డు బైపాస్ ద్వారా హెవెన్ గామాకు వెళ్లండి.` : `వాతావరణం సురక్షితం.`,
+        mr: isRed ? `NDMA आपत्ती इशारा: सुरक्षित रस्ता मार्गाने हेवन गामाकडे जा.` : `हवामान सामान्य आहे.`,
+        ta: isRed ? `NDMA எச்சரிக்கை: பாதுகாப்பான சாலை வழித்தடத்தில் புகலிடம் காமாவுக்கு செல்லவும்.` : `பகுதி பாதுகாப்பானது.`,
+        kn: isRed ? `NDMA ಎಚ್ಚರಿಕೆ: ನೈಜ ರಸ್ತೆ ಬೈಪಾಸ್ ಮೂಲಕ ಹೆವೆನ್ ಗಾಮಾಗೆ ತೆರಳಿ.` : `ಸುರಕ್ಷಿತವಾಗಿದೆ.`,
+        or: isRed ? `NDMA ବାତ୍ୟା ସତର୍କତା: ସୁରକ୍ଷିତ ବାଇପାସ୍ ରାସ୍ତା ଦେଇ ହେଭେନ ଗାମା ଯାଆନ୍ତୁ।` : `ଅଞ୍ଚଳ ସୁରକ୍ଷିତ।`,
+        ml: isRed ? `NDMA മുന്നറിയിപ്പ്: സുരക്ഷിതമായ റോഡ് ബൈപാസ് വഴി ഹെവൻ ഗാമയിലേക്ക് പോവുക.` : `സുരക്ഷിതമാണ്.`,
+        pa: isRed ? `NDMA ਆਫ਼ਤ ਚੇਤਾਵਨੀ: ਸੁਰੱਖਿਅਤ ਸੜਕ ਰੂਟ ਰਾਹੀਂ ਹੈਵਨ ਗਾਮਾ ਪਹੁੰਚੋ।` : `ਸੁਰੱਖਿਅਤ ਹੈ।`,
+        pt: isRed ? `ALERTA NDMA: Ciclone iminente. Siga pela rota rodoviária real até o Refúgio Gama.` : `Normal.`,
+        ru: isRed ? `ПРЕДУПРЕЖДЕНИЕ NDMA: Следуйте реальным дорожным путем в Убежище Гамма.` : `Норма.`,
+        zh: isRed ? `紧急 NDMA 灾害预警：请沿实际测绘公路撤离至伽马避难所。` : `电力与天气一切正常。`,
+        af: isRed ? `DRINGENDE NDMA WAARSKUWING: Volg die padverbypad na Toevlugsoord Gamma.` : `Kragtoevoer is stabiel.`
       },
       ttsData: {
         en: { mp3Url: "" }, hi: { mp3Url: "" }, gu: { mp3Url: "" }, bn: { mp3Url: "" }, te: { mp3Url: "" },
@@ -881,26 +899,30 @@ export default function App() {
         {/* MAP SECTION WRAPPER */}
         <div id="map-wrapper" className="relative w-full h-[500px] lg:h-[600px] z-10 rounded-lg overflow-hidden border border-slate-700" style={{ height: '100%', position: 'relative' }}>
           
-          {/* BLACK TIER FULL-SCREEN MODAL OVERRIDE */}
-          {dashboardData?.riskTier === 'BLACK' && (
+          {/* BLACK TIER FULL-SCREEN MODAL OVERRIDE WITH COUNTDOWN */}
+          {blackModalVisible && (
              <div style={{
                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-               background: 'rgba(0, 0, 0, 0.85)', zIndex: 9999,
+               background: 'rgba(0, 0, 0, 0.90)', zIndex: 9999,
                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                textAlign: 'center', padding: '20px', border: '5px solid #ef4444'
              }}>
                 <AlertTriangle size={64} color="#ef4444" className="spinner" style={{ animationDuration: '0.5s' }} />
                 <h1 style={{ color: '#ef4444', fontSize: '28px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '20px' }}>URGENT: CATEGORY 5 CYCLONE DETECTED</h1>
-                <h2 style={{ color: '#f8fafc', fontSize: '20px', fontWeight: 'bold', marginBottom: '30px' }}>LANDFALL IN 12 HOURS.</h2>
+                <h2 style={{ color: '#f8fafc', fontSize: '20px', fontWeight: 'bold', marginBottom: '20px' }}>LANDFALL IN 12 HOURS.</h2>
 
-                <div style={{ background: '#7f1d1d', padding: '15px 25px', borderRadius: '8px', border: '1px solid #ef4444', color: '#fecaca', fontWeight: 'bold', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)' }}>
+                <div style={{ background: '#7f1d1d', padding: '15px 25px', borderRadius: '8px', border: '1px solid #ef4444', color: '#fecaca', fontWeight: 'bold', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)' }}>
                   <Navigation2 size={24} />
                   Evacuation Route: Proceed immediately to {dashboardData.evacuationRouting?.destinationLocation?.name}
                 </div>
 
-                <div style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '13px', background: 'rgba(2, 6, 23, 0.8)', padding: '10px', border: '1px dashed #38bdf8', borderRadius: '4px', maxWidth: '80%' }}>
+                <div style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '13px', background: 'rgba(2, 6, 23, 0.8)', padding: '10px', border: '1px dashed #38bdf8', borderRadius: '4px', maxWidth: '90%', wordBreak: 'break-all', whiteSpace: 'normal', marginBottom: '20px' }}>
                   <span style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', animation: 'pulse 1s infinite' }}>📡 BROADCASTING TO MESH (ZERO-INTERNET NODE)</span>
                   {dashboardData.offlineLoraPacket}
+                </div>
+
+                <div style={{ color: '#facc15', fontSize: '16px', fontWeight: 'bold', animation: 'pulse 1s infinite' }}>
+                  Map unlocking in {modalCountdown}s to display safe routes...
                 </div>
              </div>
           )}
@@ -1042,7 +1064,7 @@ export default function App() {
                   <div style={{ color: '#0f172a', fontSize: '12px' }}>
                     <strong style={{ color: '#0284c7' }}>🚗 Real Road Evacuation Route</strong><br />
                     Distance: <strong>{dashboardData.evacuationRouting.totalDistanceKm || 14.8} km</strong><br />
-                    Est. Convoy Transit: <strong>{dashboardData.evacuationRouting.estimatedTransitMinutes || 22} mins</strong><br />
+                    Est. Transit ({transportMode}): <strong>{transportMode === 'walking' ? Math.round(dashboardData.evacuationRouting.estimatedTransitMinutes * 12) : transportMode === 'truck' ? Math.round(dashboardData.evacuationRouting.estimatedTransitMinutes * 1.5) : transportMode === 'bike' ? Math.round(dashboardData.evacuationRouting.estimatedTransitMinutes * 1.2) : dashboardData.evacuationRouting.estimatedTransitMinutes} mins</strong><br />
                     Destination: <strong>{dashboardData.evacuationRouting?.destinationLocation?.name || "Haven Gamma (18.5m MSL)"}</strong>
                   </div>
                 </Popup>
@@ -1401,6 +1423,28 @@ export default function App() {
                   </span>
                 </div>
 
+                {/* TRANSPORT MODE SELECTOR */}
+                <div style={{ display: 'flex', gap: '5px', marginBottom: '8px', justifyContent: 'center' }}>
+                  {['car', 'bike', 'truck', 'walking'].map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setTransportMode(mode)}
+                      style={{
+                        background: transportMode === mode ? '#0369a1' : '#0f172a',
+                        color: transportMode === mode ? '#ffffff' : '#94a3b8',
+                        border: `1px solid ${transportMode === mode ? '#38bdf8' : '#334155'}`,
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                        textTransform: 'capitalize'
+                      }}
+                    >
+                      {mode === 'car' ? '🚗' : mode === 'bike' ? '🏍️' : mode === 'truck' ? '🚚' : '🚶'} {mode}
+                    </button>
+                  ))}
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#020617', padding: '6px 8px', borderRadius: '6px', border: '1px solid #1e293b', marginBottom: '6px' }}>
                   <div>
                     <div style={{ fontSize: '10px', color: '#94a3b8' }}>Distance</div>
@@ -1409,9 +1453,15 @@ export default function App() {
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>Convoy Time</div>
+                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>Est. Time</div>
                     <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399' }}>
-                      {dashboardData.evacuationRouting.estimatedTransitMinutes || 22} mins
+                      {transportMode === 'walking' 
+                        ? Math.round(dashboardData.evacuationRouting.estimatedTransitMinutes * 12) 
+                        : transportMode === 'truck' 
+                          ? Math.round(dashboardData.evacuationRouting.estimatedTransitMinutes * 1.5)
+                          : transportMode === 'bike'
+                            ? Math.round(dashboardData.evacuationRouting.estimatedTransitMinutes * 1.2)
+                            : dashboardData.evacuationRouting.estimatedTransitMinutes} mins
                     </div>
                   </div>
                   <div>
