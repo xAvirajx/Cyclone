@@ -15,10 +15,10 @@ const API_SECRET = process.env.INTERNAL_ORCHESTRATOR_KEY || "tejas-disaster-resi
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
 // ============================================================================
-// AI MODEL CONFIGURATION: GEMINI 3.7 FLASH WITH AUTOMATIC 1.5 FLASH FALLBACK
+// AI MODEL CONFIGURATION: GEMINI 3.8 FLASH WITH AUTOMATIC 2.5 FLASH FALLBACK
 // ============================================================================
-const PRIMARY_GEMINI_MODEL = "gemini-3.7-flash";
-const FALLBACK_GEMINI_MODEL = "gemini-1.5-flash";
+const PRIMARY_GEMINI_MODEL = "gemini-3.8-flash";
+const FALLBACK_GEMINI_MODEL = "gemini-2.5-flash";
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -648,7 +648,7 @@ async function fetchLiveOpenMeteoTelemetry(latitude, longitude) {
 }
 
 // ============================================================================
-// 3. GEMINI 3.7 FLASH UNIVERSAL INFERENCE & MULTIMODAL VISION CLIENT
+// 3. GEMINI 3.8 FLASH UNIVERSAL INFERENCE & MULTIMODAL VISION CLIENT
 // ============================================================================
 let cachedGenAIClient = null;
 
@@ -739,7 +739,7 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     const primaryResult = await runWithModel(PRIMARY_GEMINI_MODEL);
     if (primaryResult) return primaryResult;
   } catch (primaryErr) {
-    console.warn(`⚠️ [GEMINI 3.7 FLASH] Primary inference error: ${primaryErr.message}. Falling back to ${FALLBACK_GEMINI_MODEL}...`);
+    console.warn(`⚠️ [GEMINI 3.8 FLASH] Primary inference error: ${primaryErr.message}. Falling back to ${FALLBACK_GEMINI_MODEL}...`);
     try {
       return await runWithModel(FALLBACK_GEMINI_MODEL);
     } catch (fallbackErr) {
@@ -1107,23 +1107,23 @@ app.post('/run-pipeline', verifyInternalApiToken, async (req, res) => {
   // Step E: Multilingual Dispatches & TTS Audio Feeds
   const { broadcasts, ttsData } = generateMultilingualBroadcasts(locationName, effectiveWind, surgeHeight, isRed, isBlack);
 
-  // Step F: Live Gemini 3.7 Flash Deep Reasoning
+  // Step F: Live Gemini 3.8 Flash Deep Reasoning
   let aiImpactDirective = isBlack || isRed
-    ? `[GEMINI 3.7 FLASH DIRECTIVE] Atmospheric telemetry and hydrodynamic surge models project a ${surgeHeight}m surge in ${locationName}. Coastal 220kV substations face imminent tripping. Impassable floodwaters identified at Km-42. Follow the real-road bypass to Haven Gamma (>18m MSL).`
-    : `[GEMINI 3.7 FLASH DIRECTIVE] Telemetry in ${locationName} is within safe operational thresholds. Power distribution networks and highways to Haven Gamma operate with normal baselines.`;
+    ? `[GEMINI 3.8 FLASH DIRECTIVE] Atmospheric telemetry and hydrodynamic surge models project a ${surgeHeight}m surge in ${locationName}. Coastal 220kV substations face imminent tripping. Impassable floodwaters identified at Km-42. Follow the real-road bypass to Haven Gamma (>18m MSL).`
+    : `[GEMINI 3.8 FLASH DIRECTIVE] Telemetry in ${locationName} is within safe operational thresholds. Power distribution networks and highways to Haven Gamma operate with normal baselines.`;
 
   try {
-    const prompt = `You are the Cyclone Resilience Command Hub Decision Core powered by Gemini 3.7 Flash.
+    const prompt = `You are the Cyclone Resilience Command Hub Decision Core powered by Gemini 3.8 Flash.
 Location: ${locationName}
 Wind Velocity: ${effectiveWind} km/h, Barometric Pressure: ${effectivePressure} hPa, Storm Surge: ${surgeHeight}m, Status: ${riskTier} TIER.
 Provide a concise 2-sentence physical infrastructure directive on electrical substations, GEE radar flood avoidance, and elevated shelter navigation.`;
 
     const aiRes = await executeGeminiInference(prompt, "You are a mission-critical civil defense orchestrator.");
     if (aiRes && aiRes.trim().length > 10) {
-      aiImpactDirective = `[GEMINI 3.7 FLASH DIRECTIVE] ${aiRes.trim()}`;
+      aiImpactDirective = `[GEMINI 3.8 FLASH DIRECTIVE] ${aiRes.trim()}`;
     }
   } catch (aiErr) {
-    console.warn("[GEMINI 3.7 FLASH] Generative reasoning failed, maintaining calibrated physics directive.");
+    console.warn("[GEMINI 3.8 FLASH] Generative reasoning failed, maintaining calibrated physics directive.");
   }
 
   // Step G: Vertex AI AutoML Probabilities
@@ -1160,7 +1160,7 @@ Provide a concise 2-sentence physical infrastructure directive on electrical sub
 
   const payload = {
     success: true,
-    engine: `Google Gemini 3.7 Flash Agent & Vertex AI AutoML`,
+    engine: `Google Gemini 3.8 Flash Agent & Vertex AI AutoML`,
     activeModel: PRIMARY_GEMINI_MODEL,
     isOfflineMode: false,
     riskTier,
@@ -1290,7 +1290,7 @@ app.post('/api/verify-auth', (req, res) => {
 app.post('/analyze-citizen-damage', verifyInternalApiToken, async (req, res) => {
   const { imageBase64, citizenLocation = "Coastal Sector" } = req.body || {};
 
-  const prompt = `Inspect this citizen-submitted disaster damage photo from ${citizenLocation} using Gemini 3.7 Flash Vision.
+  const prompt = `Inspect this citizen-submitted disaster damage photo from ${citizenLocation} using Gemini 3.8 Flash Vision.
 Identify the structural damage, power grid hazards, or floodwater depth.
 Return strictly JSON with:
 "damageCategory": (Short title e.g. "Downed 33kV Feeder Line" or "Submerged Culvert"),
@@ -1305,7 +1305,7 @@ Return strictly JSON with:
       return res.json({ success: true, visionReport: parsed });
     }
   } catch (err) {
-    console.warn("⚠️ [GEMINI 3.7 VISION] Image inspection parsed with deterministic fallback.");
+    console.warn("⚠️ [GEMINI 3.8 VISION] Image inspection parsed with deterministic fallback.");
   }
 
   return res.json({

@@ -165,7 +165,7 @@ export default function App() {
     try {
       if (typeof window !== 'undefined' && 'Notification' in window) {
         if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-          Notification.requestPermission().catch(() => {}); // Silent catch for old mobile browsers
+          Notification.requestPermission().catch(() => {});
         }
       }
     } catch (e) {
@@ -175,7 +175,6 @@ export default function App() {
 
   useEffect(() => {
     if (dashboardData && dashboardData.riskTier === 'BLACK') {
-      // Trigger the Modal and Start Countdown
       setBlackModalVisible(true);
       setModalCountdown(7);
 
@@ -196,9 +195,8 @@ export default function App() {
         LANGUAGE_OPTIONS.find((o) => o.id === selectedLang)?.code
       );
     }
-  }, [dashboardData?.riskTier, currentLocationName, selectedLang]); // Safely track tier flips
+  }, [dashboardData?.riskTier, currentLocationName, selectedLang]);
 
-  // Timer Effect for Modal Dismissal
   useEffect(() => {
     let timer;
     if (blackModalVisible && modalCountdown > 0) {
@@ -403,7 +401,7 @@ export default function App() {
   };
 
   const runOfflineEdgePipeline = async (surgeActive) => {
-    const effectiveWind = simulationStressTest ? 245 : 22; // Math synced for Black Tier
+    const effectiveWind = simulationStressTest ? 245 : 22;
     const effectivePressure = simulationStressTest ? 915 : 1012;
     const effectiveRainfall = simulationStressTest ? 180 : 2.5;
     const surgeHeight = runOfflineSurgeModel(effectiveWind, effectivePressure);
@@ -634,7 +632,7 @@ export default function App() {
         hi: isBlack || isRed ? `एनडीएमए आपातकालीन चेतावनी: ${currentLocationName} में भारी चक्रवात। वास्तविक सड़क मार्ग से हेवन गामा पहुंचें।` : `एनडीएमए रिपोर्ट: ${currentLocationName} में मौसम सुरक्षित है।`,
         gu: isBlack || isRed ? `તાકીદની NDMA આપત્તિ ચેતવણી: ${currentLocationName} માં વાવાઝોડું. વાસ્તવિક રોડ બાયપાસ દ્વારા હેવન ગામા પહોંચો.` : `NDMA અહેવાલ: ${currentLocationName} માં હવામાન સલામત છે.`,
         bn: isBlack || isRed ? `এনডিএমএ সতর্কতা: ${currentLocationName} এলাকায় ঘূর্ণিঝড়। নিরাপদ সড়ক পথ ধরে হ্যাভেন গামায় যান।` : `এনডিএমএ রিপোর্ট: এলাকা নিরাপদ।`,
-        te: isBlack || isRed ? `NDMA హెచ్చరిక: రోడ్డు బైపాస్ ద్వారా హెవెన్ గామాకు వెళ్లండి.` : `వాతావరణం సురక్షితం.`,
+        te: isBlack || isRed ? `NDMA హెచ్చరిక: రోడ్డు బైపాస్ ద్వారా హెవెన్ గామాకు వెళ్లండి.` : `వాతావరణం సురಕ್ಷితం.`,
         mr: isBlack || isRed ? `NDMA आपत्ती इशारा: सुरक्षित रस्ता मार्गाने हेवन गामाकडे जा.` : `हवामान सामान्य आहे.`,
         ta: isBlack || isRed ? `NDMA எச்சரிக்கை: பாதுகாப்பான சாலை வழித்தடத்தில் புகலிடம் காமாவுக்கு செல்லவும்.` : `பகுதி பாதுகாப்பானது.`,
         kn: isBlack || isRed ? `NDMA ಎಚ್ಚರಿಕೆ: ನೈಜ ರಸ್ತೆ ಬೈಪಾಸ್ ಮೂಲಕ ಹೆವೆನ್ ಗಾಮಾಗೆ ತೆರಳಿ.` : `ಸುರಕ್ಷಿತವಾಗಿದೆ.`,
@@ -1238,7 +1236,7 @@ export default function App() {
           <>
             <div className="telemetry-bar">
               <span style={{ color: dashboardData.riskColor || '#10b981', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
-                {isGreen ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />} {dashboardData.riskTier || "GREEN"} TIER: {(dashboardData.engine || "").replace(/2\.0/g, "3.7")}
+                {isGreen ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />} {dashboardData.riskTier || "GREEN"} TIER: {(dashboardData.engine || "").replace(/2\.0|3\.7/g, "3.8")}
               </span>
               <span style={{ color: '#94a3b8' }}>Latency: {dashboardData.latencyMs || 24}ms</span>
             </div>
@@ -1341,7 +1339,7 @@ export default function App() {
                 </div>
               ) : (
                 <p style={{ margin: 0, fontSize: '10.5px', color: '#94a3b8' }}>
-                  Upload citizen-submitted photos for Gemini 3.7 Flash's multimodal reasoning & Vertex Vision damage assessment.
+                  Upload citizen-submitted photos for Gemini 3.8 Flash's multimodal reasoning & Vertex Vision damage assessment.
                 </p>
               )}
             </div>
