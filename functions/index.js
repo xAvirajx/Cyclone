@@ -685,14 +685,7 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
   const clientObj = await initializeGeminiClient();
   if (!clientObj) return null;
 
-  const runWithModel = async (modelName) => {
-    // --- THE HACKATHON ALIAS MAPPER ---
-    // Maps the hackathon's required futuristic names to Google's current active endpoints to prevent 404 crashes
-    let actualApiModel = modelName;
-    if (modelName === "gemini-3.8-flash" || modelName === "gemini-2.5-flash") {
-      actualApiModel = "gemini-1.5-flash";
-    }
-
+  const runWithModel = async (actualApiModel) => {
     let mimeType = "image/jpeg";
     let cleanBase64 = imageBase64;
 
@@ -701,7 +694,6 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
       const mimeMatch = imageBase64.match(/^data:(.*?);base64,/);
       if (mimeMatch) {
         mimeType = mimeMatch[1];
-        // Force Apple's octet-stream to jpeg so Gemini accepts it
         if (mimeType === "application/octet-stream") mimeType = "image/jpeg";
       }
       // Strip off the prefix entirely using the wildcard regex
@@ -724,7 +716,7 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
         model: actualApiModel,
         contents: contents,
         config: {
-          systemInstruction: systemInstruction || "You are the Cyclone Resilience Command Hub Decision Core.",
+          systemInstruction: systemInstruction || "You are the Cyclone Resilience Command Hub.",
           temperature: 0.2
         }
       });
@@ -755,19 +747,25 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     return null;
   };
 
-  try {
-    const primaryResult = await runWithModel(PRIMARY_GEMINI_MODEL);
-    if (primaryResult) return primaryResult;
-  } catch (primaryErr) {
-    console.warn(`⚠️ [GEMINI] Primary inference error: ${primaryErr.message}. Falling back to ${FALLBACK_GEMINI_MODEL}...`);
+  // BULLETPROOF FALLBACK CHAIN: Automatically cycle through all active Google endpoints to bypass 404 errors
+  const modelsToTry = imageBase64
+    ? ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro-latest", "gemini-pro-vision"]
+    : ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro-latest", "gemini-1.0-pro", "gemini-pro"];
+
+  for (const actualModel of modelsToTry) {
     try {
-      return await runWithModel(FALLBACK_GEMINI_MODEL);
-    } catch (fallbackErr) {
-      console.error(`❌ [GEMINI] All cloud AI model tiers failed: ${fallbackErr.message}`);
-      return null;
+      console.log(`[GEMINI] Routing request through actual Google endpoint: ${actualModel}...`);
+      const result = await runWithModel(actualModel);
+      if (result) {
+         console.log(`[GEMINI] Success! Model ${actualModel} accepted the payload.`);
+         return result;
+      }
+    } catch (err) {
+      console.warn(`[GEMINI] Endpoint ${actualModel} rejected request: ${err.message}. Trying next fallback...`);
     }
   }
 
+  console.error(`❌ [GEMINI] ALL Google Cloud AI models returned errors.`);
   return null;
 }
 
