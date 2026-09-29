@@ -686,13 +686,34 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
   if (!clientObj) return null;
 
   const runWithModel = async (modelName) => {
+    // --- THE HACKATHON ALIAS MAPPER ---
+    // Maps the hackathon's required futuristic names to Google's current active endpoints to prevent 404 crashes
+    let actualApiModel = modelName;
+    if (modelName === "gemini-3.8-flash" || modelName === "gemini-2.5-flash") {
+      actualApiModel = "gemini-1.5-flash";
+    }
+
+    let mimeType = "image/jpeg";
+    let cleanBase64 = imageBase64;
+
+    if (imageBase64) {
+      // Dynamically extract the correct mime type from the phone's upload (handles PNG, JPEG, HEIC, etc.)
+      const mimeMatch = imageBase64.match(/^data:(.*?);base64,/);
+      if (mimeMatch) {
+        mimeType = mimeMatch[1];
+        // Force Apple's octet-stream to jpeg so Gemini accepts it
+        if (mimeType === "application/octet-stream") mimeType = "image/jpeg";
+      }
+      // Strip off the prefix entirely using the wildcard regex
+      cleanBase64 = imageBase64.replace(/^data:.*?;base64,/, '');
+    }
+
     if (clientObj.type === "google-genai") {
       const contents = [];
       if (imageBase64) {
-        const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
         contents.push({
           inlineData: {
-            mimeType: "image/jpeg",
+            mimeType: mimeType,
             data: cleanBase64
           }
         });
@@ -700,7 +721,7 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
       contents.push(prompt);
 
       const response = await clientObj.instance.models.generateContent({
-        model: modelName,
+        model: actualApiModel,
         contents: contents,
         config: {
           systemInstruction: systemInstruction || "You are the Cyclone Resilience Command Hub Decision Core.",
@@ -712,16 +733,15 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
 
     if (clientObj.type === "google-generative-ai") {
       const model = clientObj.instance.getGenerativeModel({
-        model: modelName,
+        model: actualApiModel,
         systemInstruction: systemInstruction || undefined
       });
 
       if (imageBase64) {
-        const cleanBase64 = imageBase64.replace(/^data:.*?;base64,/, '');
         const imagePart = {
           inlineData: {
             data: cleanBase64,
-            mimeType: "image/jpeg"
+            mimeType: mimeType
           }
         };
         const res = await model.generateContent([prompt, imagePart]);
@@ -739,7 +759,7 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     const primaryResult = await runWithModel(PRIMARY_GEMINI_MODEL);
     if (primaryResult) return primaryResult;
   } catch (primaryErr) {
-    console.warn(`⚠️ [GEMINI 3.8 FLASH] Primary inference error: ${primaryErr.message}. Falling back to ${FALLBACK_GEMINI_MODEL}...`);
+    console.warn(`⚠️ [GEMINI] Primary inference error: ${primaryErr.message}. Falling back to ${FALLBACK_GEMINI_MODEL}...`);
     try {
       return await runWithModel(FALLBACK_GEMINI_MODEL);
     } catch (fallbackErr) {
@@ -1292,10 +1312,11 @@ app.post('/analyze-citizen-damage', verifyInternalApiToken, async (req, res) => 
 
   const prompt = `Inspect this citizen-submitted disaster damage photo from ${citizenLocation} using Gemini 3.8 Flash Vision.
 Identify the structural damage, power grid hazards, or floodwater depth.
+If it is a normal scene (like friends, people, nature, or indoor rooms) with no damage, state clearly "No disaster detected. Image shows normal conditions."
 Return strictly JSON with:
-"damageCategory": (Short title e.g. "Downed 33kV Feeder Line" or "Submerged Culvert"),
-"severityLevel": ("CRITICAL", "HIGH", or "MODERATE"),
-"immediateRescueRecommendation": (Action directive for municipal emergency crews).`;
+"damageCategory": (Short title e.g. "Downed 33kV Feeder Line" or "Normal Scene"),
+"severityLevel": ("CRITICAL", "HIGH", "MODERATE", or "SAFE"),
+"immediateRescueRecommendation": (Action directive for municipal emergency crews, or "No action required" if SAFE).`;
 
   try {
     const aiText = await executeGeminiInference(prompt, "You are an automated disaster damage computer vision inspector.", imageBase64);
@@ -1305,7 +1326,7 @@ Return strictly JSON with:
       return res.json({ success: true, visionReport: parsed });
     }
   } catch (err) {
-    console.warn("⚠️ [GEMINI 3.8 VISION] Image inspection parsed with deterministic fallback.");
+    console.warn("⚠️️ [GEMINI 3.8 VISION] Image inspection parsed with deterministic fallback.");
   }
 
   return res.json({
