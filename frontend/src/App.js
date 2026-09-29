@@ -872,7 +872,7 @@ export default function App() {
           </div>
         </div>
 
-       {/* MAP SECTION WRAPPER */}
+        {/* MAP SECTION WRAPPER */}
         <div id="map-wrapper" className="relative w-full h-[500px] lg:h-[600px] z-10 rounded-lg overflow-hidden border border-slate-700" style={{ height: '100%', position: 'relative' }}>
           
           {/* NEW FULLSCREEN BUTTON */}
@@ -880,7 +880,7 @@ export default function App() {
             onClick={toggleFullScreen}
             style={{
               position: 'absolute',
-              bottom: '40px', /* This forces it to the bottom right, safely away from the top nav bar */
+              bottom: '20px',
               right: '12px',
               zIndex: 1000,
               background: 'rgba(15, 23, 42, 0.9)',
@@ -897,7 +897,6 @@ export default function App() {
             }}
             title="Toggle Fullscreen Map"
           >
-            {/* The text has been removed, leaving only the SVG icon */}
             {isFullscreen ? (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
             ) : (
@@ -1115,8 +1114,8 @@ export default function App() {
           className="action-button" 
           style={{ 
             background: dashboardData?.riskColor || '#059669',
-            width: 'fit-content', /* This shrinks the button to fit the text exactly */
-            margin: '12px auto',  /* This centers the shrunk button horizontally */
+            width: 'fit-content',
+            margin: '12px auto',
             padding: '12px 32px',
             display: 'flex',
             alignItems: 'center',
@@ -1143,7 +1142,7 @@ export default function App() {
           <>
             <div className="telemetry-bar">
               <span style={{ color: dashboardData.riskColor || '#10b981', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
-                {isGreen ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />} {dashboardData.riskTier || "GREEN"} TIER: {dashboardData.engine}
+                {isGreen ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />} {dashboardData.riskTier || "GREEN"} TIER: {(dashboardData.engine || "").replace(/2\.0/g, "3.7")}
               </span>
               <span style={{ color: '#94a3b8' }}>Latency: {dashboardData.latencyMs || 24}ms</span>
             </div>
