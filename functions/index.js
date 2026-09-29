@@ -15,9 +15,9 @@ const API_SECRET = process.env.INTERNAL_ORCHESTRATOR_KEY || "tejas-disaster-resi
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
 // ============================================================================
-// AI MODEL CONFIGURATION: GEMINI 2.0 FLASH WITH AUTOMATIC 1.5 FLASH FALLBACK
+// AI MODEL CONFIGURATION: GEMINI 3.7 FLASH WITH AUTOMATIC 1.5 FLASH FALLBACK
 // ============================================================================
-const PRIMARY_GEMINI_MODEL = "gemini-2.0-flash";
+const PRIMARY_GEMINI_MODEL = "gemini-3.7-flash";
 const FALLBACK_GEMINI_MODEL = "gemini-1.5-flash";
 
 app.use(cors());
@@ -648,7 +648,7 @@ async function fetchLiveOpenMeteoTelemetry(latitude, longitude) {
 }
 
 // ============================================================================
-// 3. GEMINI 2.0 FLASH UNIVERSAL INFERENCE & MULTIMODAL VISION CLIENT
+// 3. GEMINI 3.7 FLASH UNIVERSAL INFERENCE & MULTIMODAL VISION CLIENT
 // ============================================================================
 let cachedGenAIClient = null;
 
@@ -739,7 +739,7 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     const primaryResult = await runWithModel(PRIMARY_GEMINI_MODEL);
     if (primaryResult) return primaryResult;
   } catch (primaryErr) {
-    console.warn(`⚠️ [GEMINI 2.0 FLASH] Primary inference error: ${primaryErr.message}. Falling back to ${FALLBACK_GEMINI_MODEL}...`);
+    console.warn(`⚠️ [GEMINI 3.7 FLASH] Primary inference error: ${primaryErr.message}. Falling back to ${FALLBACK_GEMINI_MODEL}...`);
     try {
       return await runWithModel(FALLBACK_GEMINI_MODEL);
     } catch (fallbackErr) {
@@ -799,16 +799,16 @@ function runVertexAIPredictiveModel(windKmph, surgeMeters, rainfallMm) {
 // ============================================================================
 // 6. PUBLIC SECTOR DATASETS (IMD, FAO, WHO, data.gov.in)
 // ============================================================================
-function aggregatePublicDatasets(locationName, isRed) {
+function aggregatePublicDatasets(locationName, isRed, isBlack = false) {
   return {
     imdBulletin: {
       agency: "India Meteorological Department (IMD) - Ministry of Earth Sciences",
       bulletinNo: "IMD/CYCLONE/2026/BOB-AS-09",
-      coastalWarningStatus: isRed ? "RED MESSAGE: GREAT DANGER SIGNAL NO. 10 HOISTED" : "GREEN ALL-CLEAR ROUTINE ADVISORY",
-      stormCategory: isRed ? "Very Severe Cyclonic Storm (VSCS)" : "Deep Depression / Nominal Wind",
+      coastalWarningStatus: isBlack || isRed ? "RED MESSAGE: GREAT DANGER SIGNAL NO. 10 HOISTED" : "GREEN ALL-CLEAR ROUTINE ADVISORY",
+      stormCategory: isBlack ? "SUPER CYCLONIC STORM (SuCS)" : isRed ? "Very Severe Cyclonic Storm (VSCS)" : "Deep Depression / Nominal Wind",
       referenceStation: locationName,
-      portWarningFlagsHoisted: isRed ? ["Port Warning Signal No. 10 (Great Danger)", "Fishermen Warning: Absolute Sea Prohibition"] : ["Local Cautionary Signal No. 3"],
-      advisoryText: isRed ? "Total suspension of fishing operations. Mobilize NDRF battallions along coastal taluks." : "Routine sea operations permitted with standard coastal meteorological vigilance."
+      portWarningFlagsHoisted: isBlack || isRed ? ["Port Warning Signal No. 10 (Great Danger)", "Fishermen Warning: Absolute Sea Prohibition"] : ["Local Cautionary Signal No. 3"],
+      advisoryText: isBlack || isRed ? "Total suspension of fishing operations. Mobilize NDRF battallions along coastal taluks." : "Routine sea operations permitted with standard coastal meteorological vigilance."
     },
     dataGovIn: {
       portal: "Open Government Data (OGD) Platform India (data.gov.in)",
@@ -821,20 +821,20 @@ function aggregatePublicDatasets(locationName, isRed) {
     faoAgriculture: {
       agency: "Food and Agriculture Organization (FAO) - Agro-Met Indicators",
       primaryCropStage: "Kharif Paddy & Coastal Groundnut Maturity Stage",
-      vulnerableCropAcreageHectares: isRed ? 42500 : 1200,
-      salineWaterloggedSoilHazard: isRed ? "CRITICAL SALINE CONTAMINATION THREAT (>4.5 dS/m Electrical Conductivity)" : "NOMINAL DRAINAGE CAPACITY",
+      vulnerableCropAcreageHectares: isBlack || isRed ? 42500 : 1200,
+      salineWaterloggedSoilHazard: isBlack || isRed ? "CRITICAL SALINE CONTAMINATION THREAT (>4.5 dS/m Electrical Conductivity)" : "NOMINAL DRAINAGE CAPACITY",
       recommendedMitigation: "Pre-harvest immediate drainage pumping and saline barrier sandbagging."
     },
     whoHealth: {
       agency: "World Health Organization (WHO) - Health Emergency Programme",
-      postFloodEpidemicRiskScore: isRed ? "HIGH (Level 4 Disease Surveillance Triggered)" : "LOW (Baseline Monitoring)",
+      postFloodEpidemicRiskScore: isBlack || isRed ? "HIGH (Level 4 Disease Surveillance Triggered)" : "LOW (Baseline Monitoring)",
       monitoredPathogens: [
         "Vibrio cholerae (Cholera)",
         "Leptospira interrogans (Leptospirosis)",
         "Dengue/Malaria vector vectors"
       ],
-      emergencyWaterPurificationTabletsNeeded: isRed ? 250000 : 10000,
-      mobileHealthTriageTeamsDispatched: isRed ? 12 : 2
+      emergencyWaterPurificationTabletsNeeded: isBlack || isRed ? 250000 : 10000,
+      mobileHealthTriageTeamsDispatched: isBlack || isRed ? 12 : 2
     }
   };
 }
@@ -932,67 +932,97 @@ async function generateRealRoadEvacuationRoute(currentLat, currentLon, destLat, 
 // ============================================================================
 // 8. 14-LANGUAGE EXPANDED LOCALIZATION & GOOGLE TTS AUDIO STREAMS
 // ============================================================================
-function generateMultilingualBroadcasts(locationName, windKmph, surgeMeters, isRed) {
+function generateMultilingualBroadcasts(locationName, windKmph, surgeMeters, isRed, isBlack = false) {
   const broadcasts = {
-    en: isRed
-      ? `URGENT NDMA CYCLONE DIRECTIVE: ${locationName} is facing imminent landfall with ${windKmph} km/h winds and ${surgeMeters}m surge. Follow real-road inland bypass to Haven Gamma immediately.`
-      : `NDMA WEATHER ADVISORY: Conditions in ${locationName} are calm (${windKmph} km/h). Safe shelter havens remain monitored.`,
+    en: isBlack 
+      ? `URGENT CATEGORY 5 OVERRIDE: ${locationName} is facing a super cyclone (${windKmph} km/h). Immediate evacuation to Haven Gamma required.`
+      : isRed
+        ? `URGENT NDMA CYCLONE DIRECTIVE: ${locationName} is facing imminent landfall with ${windKmph} km/h winds and ${surgeMeters}m surge. Follow real-road inland bypass to Haven Gamma immediately.`
+        : `NDMA WEATHER ADVISORY: Conditions in ${locationName} are calm (${windKmph} km/h). Safe shelter havens remain monitored.`,
 
-    hi: isRed
-      ? `एनडीएमए आपातकालीन चेतावनी: ${locationName} में ${windKmph} किमी/घंटा की गति से चक्रवाती तूफान आ रहा है। बाढ़ प्रभावित तटीय सड़कों से बचें और सुरक्षित बाईपास मार्ग से हेवन गामा पहुंचें।`
-      : `एनडीएमए मौसम रिपोर्ट: ${locationName} में मौसम सामान्य और सुरक्षित है (${windKmph} किमी/घंटा)। सभी सुरक्षित आश्रय केंद्र सक्रिय निगरानी में हैं।`,
+    hi: isBlack 
+      ? `अत्यावश्यक सुपर साइक्लोन अलर्ट: ${locationName} में ${windKmph} किमी/घंटा का महातूफान। तुरंत हेवन गामा पहुँचें।`
+      : isRed
+        ? `एनडीएमए आपातकालीन चेतावनी: ${locationName} में ${windKmph} किमी/घंटा की गति से चक्रवाती तूफान आ रहा है। बाढ़ प्रभावित तटीय सड़कों से बचें और सुरक्षित बाईपास मार्ग से हेवन गामा पहुंचें।`
+        : `एनडीएमए मौसम रिपोर्ट: ${locationName} में मौसम सामान्य और सुरक्षित है (${windKmph} किमी/घंटा)। सभी सुरक्षित आश्रय केंद्र सक्रिय निगरानी में हैं।`,
 
-    gu: isRed
-      ? `તાકીદની NDMA આપત્તિ ચેતવણી: ${locationName} માં ${windKmph} કિમી/કલાકની ઝડપે વાવાઝોડું ત્રાટકવાની શક્યતા છે. દરિયાકાંઠાના પૂરગ્રસ્ત રસ્તાઓ ટાળો અને વાસ્તવિક રોડ બાયપાસ દ્વારા હેવન ગામા પહોંચો.`
-      : `NDMA હવામાન અહેવાલ: ${locationName} માં હવામાન હાલમાં શાંત અને સલામત છે (${windKmph} કિમી/કલાક). સલામત આશ્રય સ્થાનો કાર્યરત છે.`,
+    gu: isBlack 
+      ? `સર્વોચ્ચ કટોકટી: ${locationName} માં ${windKmph} કિમી/કલાકનું સુપર સાયક્લોન. તાત્કાલિક હેવન ગામા પહોંચો.`
+      : isRed
+        ? `તાકીદની NDMA આપત્તિ ચેતવણી: ${locationName} માં ${windKmph} કિમી/કલાકની ઝડપે વાવાઝોડું ત્રાટકવાની શક્યતા છે. દરિયાકાંઠાના પૂરગ્રસ્ત રસ્તાઓ ટાળો અને વાસ્તવિક રોડ બાયપાસ દ્વારા હેવન ગામા પહોંચો.`
+        : `NDMA હવામાન અહેવાલ: ${locationName} માં હવામાન હાલમાં શાંત અને સલામત છે (${windKmph} કિમી/કલાક). સલામત આશ્રય સ્થાનો કાર્યરત છે.`,
 
-    bn: isRed
-      ? `জরুরি এনডিএমএ দুর্যোগ সতর্কতা: ${locationName} উপকূলে ${windKmph} কিমি/ঘন্টা বেগে প্রবল ঘূর্ণিঝড় আঘাত হানছে। প্লাবিত উপকূলীয় রাস্তা এড়িয়ে বাস্তব সড়ক বাইপাস ধরে অবিলম্বে হ্যাভেন গামায় যান।`
-      : `এনডিএমএ আবহাওয়া রিপোর্ট: ${locationName} এলাকায় আবহাওয়া স্বাভাবিক ও নিরাপদ (${windKmph} কিমি/ঘন্টা)। আশ্রয়কেন্দ্র প্রস্তুত রয়েছে।`,
+    bn: isBlack 
+      ? `চরম সতর্কতা: ${locationName} এ ${windKmph} কিমি/ঘন্টা বেগের সুপার সাইক্লোন। অবিলম্বে হ্যাভেন গামায় যান।`
+      : isRed
+        ? `জরুরি এনডিএমএ দুর্যোগ সতর্কতা: ${locationName} উপকূলে ${windKmph} কিমি/ঘন্টা বেগে প্রবল ঘূর্ণিঝড় আঘাত হানছে। প্লাবিত উপকূলীয় রাস্তা এড়িয়ে বাস্তব সড়ক বাইপাস ধরে অবিলম্বে হ্যাভেন গামায় যান।`
+        : `এনডিএমএ আবহাওয়া রিপোর্ট: ${locationName} এলাকায় আবহাওয়া স্বাভাবিক ও নিরাপদ (${windKmph} কিমি/ঘন্টা)। আশ্রয়কেন্দ্র প্রস্তুত রয়েছে।`,
 
-    te: isRed
-      ? `అత్యవసర NDMA తుఫాను హెచ్చరిక: ${locationName} తీరంలో ${windKmph} కిమీ/గం తీవ్ర తుఫాను ముప్పు పొంచి ఉంది. వరద ముంపు రహదారులను నివారించి బైపాస్ మార్గం ద్వారా వెంటనే హెవెన్ గామాకు చేరుకోండి.`
-      : `NDMA వాతావరణ నివేదిక: ${locationName} పరిధిలో వాతావరణం ప్రశాంతంగా ఉంది (${windKmph} కిమీ/గం). పునరావాస కేంద్రాలు సిద్ధంగా ఉన్నాయి.`,
+    te: isBlack 
+      ? `అత్యవసర సూపర్ సైక్లోన్ హెచ్చరిక: ${locationName} లో ${windKmph} కిమీ/గం తుఫాను. వెంటనే హెవెన్ గామాకు వెళ్ళండి.`
+      : isRed
+        ? `అత్యవసర NDMA తుఫాను హెచ్చరిక: ${locationName} తీరంలో ${windKmph} కిమీ/గం తీవ్ర తుఫాను ముప్పు పొంచి ఉంది. వరద ముంపు రహదారులను నివారించి బైపాస్ మార్గం ద్వారా వెంటనే హెవెన్ గామాకు చేరుకోండి.`
+        : `NDMA వాతావరణ నివేదిక: ${locationName} పరిధిలో వాతావరణం ప్రశాంతంగా ఉంది (${windKmph} కిమీ/గం). పునరావాస కేంద్రాలు సిద్ధంగా ఉన్నాయి.`,
 
-    mr: isRed
-      ? `तात्काळ NDMA आपत्ती इशारा: ${locationName} किनारपट्टीवर ${windKmph} किमी/तास वेगाने चक्रीवादळ धडकणार आहे. पाण्याखाली गेलेले रस्ते टाळा आणि सुरक्षित उन्नत बायपास मार्गाने हेवन गामा आश्रयाकडे जा.`
-      : `NDMA हवामान अहवाल: ${locationName} मध्ये सध्या हवामान सुरक्षित आणि सामान्य आहे (${windKmph} किमी/तास). सुरक्षित निवारे सज्ज आहेत.`,
+    mr: isBlack 
+      ? `अतिधोक्याचा इशारा: ${locationName} मध्ये ${windKmph} किमी/तास वेगाचे महाचक्रीवादळ. तात्काळ हेवन गामा गाठा.`
+      : isRed
+        ? `तात्काळ NDMA आपत्ती इशारा: ${locationName} किनारपट्टीवर ${windKmph} किमी/तास वेगाने चक्रीवादळ धडकणार आहे. पाण्याखाली गेलेले रस्ते टाळा आणि सुरक्षित उन्नत बायपास मार्गाने हेवन गामा आश्रयाकडे जा.`
+        : `NDMA हवामान अहवाल: ${locationName} मध्ये सध्या हवामान सुरक्षित आणि सामान्य आहे (${windKmph} किमी/तास). सुरक्षित निवारे सज्ज आहेत.`,
 
-    ta: isRed
-      ? `அவசர NDMA புயல் எச்சரிக்கை: ${locationName} பகுதியில் ${windKmph} கிமீ/மணி வேகத்தில் தீவிர புயல் கரையை கடக்கிறது. வெள்ள அபாய சாலைகளை தவிர்த்து தரைவழி பைபாஸ் மூலம் புகலிடம் காமாவுக்கு செல்லவும்.`
-      : `NDMA வானிலை அறிக்கை: ${locationName} பகுதியில் தற்போதைக்கு வானிலை இயல்பாக உள்ளது (${windKmph} கிமீ/மணி). நிவாரண மையங்கள் கண்காணிக்கப்படுகின்றன.`,
+    ta: isBlack 
+      ? `அதிதீவிர புயல் எச்சரிக்கை: ${locationName} இல் ${windKmph} கிமீ/மணி சூப்பர் சைக்ளோன். உடனடியாக புகலிடம் காமா செல்லவும்.`
+      : isRed
+        ? `அவசர NDMA புயல் எச்சரிக்கை: ${locationName} பகுதியில் ${windKmph} கிமீ/மணி வேகத்தில் தீவிர புயல் கரையை கடக்கிறது. வெள்ள அபாய சாலைகளை தவிர்த்து தரைவழி பைபாஸ் மூலம் புகலிடம் காமாவுக்கு செல்லவும்.`
+        : `NDMA வானிலை அறிக்கை: ${locationName} பகுதியில் தற்போதைக்கு வானிலை இயல்பாக உள்ளது (${windKmph} கிமீ/மணி). நிவாரண மையங்கள் கண்காணிக்கப்படுகின்றன.`,
 
-    kn: isRed
-      ? `ತುರ್ತು NDMA ಚಂಡಮಾರುತ ಎಚ್ಚರಿಕೆ: ${locationName} ಕರಾವಳಿಯಲ್ಲಿ ${windKmph} ಕಿಮೀ/ಗಂಟೆ ವೇಗದಲ್ಲಿ ಚಂಡಮಾರುತ ಅಪ್ಪಳಿಸಲಿದೆ. ಮುಳುಗಡೆಯಾದ ರಸ್ತೆಗಳನ್ನು ತಪ್ಪಿಸಿ ನೈಜ ರಸ್ತೆ ಬೈಪಾಸ್ ಮೂಲಕ ಸುರಕ್ಷಿತ ಹೆವೆನ್ ಗಾಮಾಗೆ ತೆರಳಿ.`
-      : `NDMA ಹವಾಮಾನ ವರದಿ: ${locationName} ಪ್ರದೇಶದಲ್ಲಿ ಹವಾಮಾನ ಶಾಂತವಾಗಿದೆ (${windKmph} ಕಿಮೀ/ಗಂಟೆ). ಸುರಕ್ಷಿತ ಆಶ್ರಯ ತಾಣಗಳು ಸನ್ನದ್ಧವಾಗಿವೆ.`,
+    kn: isBlack 
+      ? `ಅತ್ಯಂತ ತುರ್ತು: ${locationName} ನಲ್ಲಿ ${windKmph} ಕಿಮೀ/ಗಂಟೆ ಸೂಪರ್ ಸೈಕ್ಲೋನ್. ತಕ್ಷಣ ಹೆವೆನ್ ಗಾಮಾಗೆ ತೆರಳಿ.`
+      : isRed
+        ? `ತುರ್ತು NDMA ಚಂಡಮಾರುತ ಎಚ್ಚರಿಕೆ: ${locationName} ಕರಾವಳಿಯಲ್ಲಿ ${windKmph} ಕಿಮೀ/ಗಂಟೆ ವೇಗದಲ್ಲಿ ಚಂಡಮಾರುತ ಅಪ್ಪಳಿಸಲಿದೆ. ಮುಳುಗಡೆಯಾದ ರಸ್ತೆಗಳನ್ನು ತಪ್ಪಿಸಿ ನೈಜ ರಸ್ತೆ ಬೈಪಾಸ್ ಮೂಲಕ ಸುರಕ್ಷಿತ ಹೆವೆನ್ ಗಾಮಾಗೆ ತೆರಳಿ.`
+        : `NDMA ಹವಾಮಾನ ವರದಿ: ${locationName} ಪ್ರದೇಶದಲ್ಲಿ ಹವಾಮಾನ ಶಾಂತವಾಗಿದೆ (${windKmph} ಕಿಮೀ/ಗಂಟೆ). ಸುರಕ್ಷಿತ ಆಶ್ರಯ ತಾಣಗಳು ಸನ್ನದ್ಧವಾಗಿವೆ.`,
 
-    or: isRed
-      ? `ଜରୁରୀକାଳୀନ NDMA ବାତ୍ୟା ସତର୍କତା: ${locationName} ଉପକୂଳରେ ${windKmph} କିମି/ଘଣ୍ଟା ବେଗରେ ପ୍ରଳୟଙ୍କରୀ ବାତ୍ୟା ମାଡ଼ିଆସୁଛି। ଜଳମଗ୍ନ ରାସ୍ତା ଛାଡ଼ି ସୁରକ୍ଷିତ ବାଇପାସ୍ ଦେଇ ତୁରନ୍ତ ହେଭେନ ଗାମା ଆଶ୍ରୟସ୍ଥଳକୁ ଯାଆନ୍ତୁ।`
-      : `NDMA ପାଣିପାଗ ରିପୋର୍ଟ: ${locationName} ଅଞ୍ଚଳରେ ପାଣିପାଗ ସ୍ୱାଭାବିକ ଏବଂ ସୁରକ୍ଷିତ ଅଛି (${windKmph} କିମି/ଘଣ୍ଟା)। ବାତ୍ୟା ଆଶ୍ରୟସ୍ଥଳ ସଜାଗ ଅଛି।`,
+    or: isBlack 
+      ? `ମହାବାତ୍ୟା ସତର୍କତା: ${locationName} ରେ ${windKmph} କିମି/ଘଣ୍ଟା ମହାବାତ୍ୟା। ତୁରନ୍ତ ହେଭେନ ଗାମା ଯାଆନ୍ତୁ।`
+      : isRed
+        ? `ଜରୁରୀକାଳୀନ NDMA ବାତ୍ୟା ସତର୍କତା: ${locationName} ଉପକୂଳରେ ${windKmph} କିମି/ଘଣ୍ଟା ବେଗରେ ପ୍ରଳୟଙ୍କରୀ ବାତ୍ୟା ମାଡ଼ିଆସୁଛି। ଜଳମଗ୍ନ ରାସ୍ତା ଛାଡ଼ି ସୁରକ୍ଷିତ ବାଇପାସ୍ ଦେଇ ତୁରନ୍ତ ହେଭେନ ଗାମା ଆଶ୍ରୟସ୍ଥଳକୁ ଯାଆନ୍ତୁ।`
+        : `NDMA ପାଣିପାଗ ରିପୋର୍ଟ: ${locationName} ଅଞ୍ଚଳରେ ପାଣିପାଗ ସ୍ୱାଭାବିକ ଏବଂ ସୁରକ୍ଷିତ ଅଛି (${windKmph} କିମି/ଘଣ୍ଟା)। ବାତ୍ୟା ଆଶ୍ରୟସ୍ଥଳ ସଜାଗ ଅଛି।`,
 
-    ml: isRed
-      ? `അടിയന്തര NDMA ചുഴലിക്കാറ്റ് മുന്നറിയിപ്പ്: ${locationName} തീരത്ത് ${windKmph} കി.മീ/മണിക്കൂർ വേഗതയിൽ തീവ്ര ചുഴലിക്കാറ്റ് വീശിയടിക്കുന്നു. വെള്ളപ്പൊക്കമുള്ള തീരദേശ റോഡുകൾ ഒഴിവാക്കി ഹെവൻ ഗാമയിലേക്ക് പോവുക.`
-      : `NDMA കാലാവസ്ഥ റിപ്പോർട്ട്: ${locationName} പരിധിയിൽ അന്തരീക്ഷം ശാന്തവും സുരക്ഷിതവുമാണ് (${windKmph} കി.മീ/മണിക്കൂർ). അഭയകേന്ദ്രങ്ങൾ സജ്ജമാണ്.`,
+    ml: isBlack 
+      ? `അതീവ ജാഗ്രത: ${locationName} ൽ ${windKmph} കി.മീ/മണിക്കൂർ സൂപ്പർ സൈക്ലോൺ. ഉടൻ ഹെവൻ ഗാമയിലേക്ക് മാറുക.`
+      : isRed
+        ? `അടിയന്തര NDMA ചുഴലിക്കാറ്റ് മുന്നറിയിപ്പ്: ${locationName} തീരത്ത് ${windKmph} കി.മീ/മണിക്കൂർ വേഗതയിൽ തീവ്ര ചുഴലിക്കാറ്റ് വീശിയടിക്കുന്നു. വെള്ളപ്പൊക്കമുള്ള തീരദേശ റോഡുകൾ ഒഴിവാക്കി ഹെവൻ ഗാമയിലേക്ക് പോവുക.`
+        : `NDMA കാലാവസ്ഥ റിപ്പോർട്ട്: ${locationName} പരിധിയിൽ അന്തരീക്ഷം ശാന്തവും സുരക്ഷിതവുമാണ് (${windKmph} കി.മീ/മണിക്കൂർ). അഭയകേന്ദ്രങ്ങൾ സജ്ജമാണ്.`,
 
-    pa: isRed
-      ? `ਐਮਰਜੈਂਸੀ NDMA ਚੱਕਰਵਾਤ ਚੇਤਾਵਨੀ: ${locationName} ਵਿੱਚ ${windKmph} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ ਦੀ ਰਫ਼ਤਾਰ ਨਾਲ ਤੂਫ਼ਾਨ ਆ ਰਿਹਾ ਹੈ। ਪਾਣੀ ਭਰੇ ਰਸਤੇ ਛੱਡ ਕੇ ਉੱਚੇ ਬਾਈਪਾਸ ਰੂਟ ਰਾਹੀਂ ਹੈਵਨ ਗਾਮਾ ਪਹੁੰਚੋ।`
-      : `NDMA ਮੌਸਮ ਰਿਪੋਰਟ: ${locationName} ਵਿੱਚ ਮੌਸਮ ਸ਼ਾਂਤ ਅਤੇ ਸੁਰੱਖਿਅਤ ਹੈ (${windKmph} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ)। ਆਫ਼ਤ ਰਾਹਤ ਕੈਂਪ ਨਿਗਰਾਨੀ ਹੇਠ ਹਨ।`,
+    pa: isBlack 
+      ? `ਸੁਪਰ ਸਾਈਕਲੋਨ ਅਲਰਟ: ${locationName} ਵਿੱਚ ${windKmph} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ ਦੀ ਰਫ਼ਤਾਰ ਨਾਲ ਮਹਾਤੂਫ਼ਾਨ। ਤੁਰੰਤ ਹੈਵਨ ਗਾਮਾ ਪਹੁੰਚੋ।`
+      : isRed
+        ? `ਐਮਰਜੈਂਸੀ NDMA ਚੱਕਰਵਾਤ ਚੇਤਾਵਨੀ: ${locationName} ਵਿੱਚ ${windKmph} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ ਦੀ ਰਫ਼ਤਾਰ ਨਾਲ ਤੂਫ਼ਾਨ ਆ ਰਿਹਾ ਹੈ। ਪਾਣੀ ਭਰੇ ਰਸਤੇ ਛੱਡ ਕੇ ਉੱਚੇ ਬਾਈਪਾਸ ਰੂਟ ਰਾਹੀਂ ਹੈਵਨ ਗਾਮਾ ਪਹੁੰਚੋ।`
+        : `NDMA ਮੌਸਮ ਰਿਪੋਰਟ: ${locationName} ਵਿੱਚ ਮੌਸਮ ਸ਼ਾਂਤ ਅਤੇ ਸੁਰੱਖਿਅਤ ਹੈ (${windKmph} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ)। ਆਫ਼ਤ ਰਾਹਤ ਕੈਂਪ ਨਿਗਰਾਨੀ ਹੇਠ ਹਨ।`,
 
-    pt: isRed
-      ? `ALERTA NDMA DE EMERGÊNCIA: ${locationName} enfrenta ciclone iminente com ventos de ${windKmph} km/h e maré de tempestade de ${surgeMeters}m. Evite estradas alagadas e siga a rota até o Refúgio Gama.`
-      : `RELATÓRIO NDMA: Condições meteorológicas normais em ${locationName} (${windKmph} km/h). Abrigos seguros monitorados.`,
+    pt: isBlack 
+      ? `ALERTA DE SUPER CICLONE: ${locationName} enfrenta ${windKmph} km/h. Evacue para o Refúgio Gama imediatamente.`
+      : isRed
+        ? `ALERTA NDMA DE EMERGÊNCIA: ${locationName} enfrenta ciclone iminente com ventos de ${windKmph} km/h e maré de tempestade de ${surgeMeters}m. Evite estradas alagadas e siga a rota até o Refúgio Gama.`
+        : `RELATÓRIO NDMA: Condições meteorológicas normais em ${locationName} (${windKmph} km/h). Abrigos seguros monitorados.`,
 
-    ru: isRed
-      ? `СРОЧНОЕ ПРЕДУПРЕЖДЕНИЕ NDMA: На ${locationName} надвигается циклон со скоростью ветра ${windKmph} км/ч и штормовым нагоном ${surgeMeters}м. Следуйте в безопасное убежище Гамма.`
-      : `СВОДКА NDMA: Метеорологическая обстановка в ${locationName} спокойная (${windKmph} км/ч). Энергосети функционируют штатно.`,
+    ru: isBlack 
+      ? `СУПЕРЦИКЛОН: ${locationName} ветер ${windKmph} км/ч. Немедленно эвакуируйтесь в Убежище Гамма.`
+      : isRed
+        ? `СРОЧНОЕ ПРЕДУПРЕЖДЕНИЕ NDMA: На ${locationName} надвигается циклон со скоростью ветра ${windKmph} км/ч и штормовым нагоном ${surgeMeters}м. Следуйте в безопасное убежище Гамма.`
+        : `СВОДКА NDMA: Метеорологическая обстановка в ${locationName} спокойная (${windKmph} км/ч). Энергосети функционируют штатно.`,
 
-    zh: isRed
-      ? `紧急 NDMA 灾害预警：${locationName} 正面临风速达 ${windKmph} 公里/小时的风暴潮袭击。请避开沿海积水路段，沿测绘公路撤离至伽马安全避难所。`
-      : `NDMA 气象通报：${locationName} 当前天气与电力网络一切正常 (${windKmph} 公里/小时)。避难所处于待命状态。`,
+    zh: isBlack 
+      ? `超级气旋警告：${locationName} 风速达 ${windKmph} 公里/小时。请立即撤离至伽马避难所。`
+      : isRed
+        ? `紧急 NDMA 灾害预警：${locationName} 正面临风速达 ${windKmph} 公里/小时的风暴潮袭击。请避开沿海积水路段，沿测绘公路撤离至伽马安全避难所。`
+        : `NDMA 气象通报：${locationName} 当前天气与电力网络一切正常 (${windKmph} 公里/小时)。避难所处于待命状态。`,
 
-    af: isRed
-      ? `DRINGENDE NDMA WAARSKUWING: ${locationName} staar sikloonwinde van ${windKmph} km/h en 'n stormwaterstyging van ${surgeMeters}m in die gesig. Volg die padverbypad na Toevlugsoord Gamma.`
-      : `NDMA VERSLAG: Weerstoestande in ${locationName} is stabiel (${windKmph} km/h). Veiligheidsentrums word gemonitor.`
+    af: isBlack 
+      ? `SUPER SIKLOON: ${locationName} staar ${windKmph} km/h in die gesig. Ontruim onmiddellik na Toevlugsoord Gamma.`
+      : isRed
+        ? `DRINGENDE NDMA WAARSKUWING: ${locationName} staar sikloonwinde van ${windKmph} km/h en 'n stormwaterstyging van ${surgeMeters}m in die gesig. Volg die padverbypad na Toevlugsoord Gamma.`
+        : `NDMA VERSLAG: Weerstoestande in ${locationName} is stabiel (${windKmph} km/h). Veiligheidsentrums word gemonitor.`
   };
 
   // Generate live Google TTS audio stream URLs for instant web audio playback
@@ -1039,10 +1069,13 @@ app.post('/run-pipeline', verifyInternalApiToken, async (req, res) => {
   let effectiveRainfall = 2.5;
 
   if (simulationMode) {
-    effectiveWind = 145;
-    effectivePressure = 965;
+    // ---------------------------------------------------------------------------------
+    // UPDATED BLACK TIER LOGIC: 245 km/h triggers the "Super Cyclone" override
+    // ---------------------------------------------------------------------------------
+    effectiveWind = 245;
+    effectivePressure = 915;
     effectiveRainfall = 180.0;
-    console.log("[TELEMETRY] Cyclone stress-test engaged. Wind: 145 km/h, Pressure: 965 hPa.");
+    console.log("[TELEMETRY] Cyclone stress-test engaged. Wind: 245 km/h, Pressure: 915 hPa.");
   } else {
     const liveTelemetry = await fetchLiveOpenMeteoTelemetry(latitude, longitude);
     effectiveWind = liveTelemetry.windSpeedKmph;
@@ -1055,10 +1088,11 @@ app.post('/run-pipeline', verifyInternalApiToken, async (req, res) => {
   const surgeHeight = calculateCoupledStormSurge(effectiveWind, effectivePressure);
   console.log(`[PHYSICS] Coupled Hydrodynamic Surge Calculated: ${surgeHeight} meters.`);
 
-  // Step C: Threat Tier Categorization
+  // Step C: Threat Tier Categorization (BLACK TIER INCLUDED)
+  const isBlack = effectiveWind > 220 || effectivePressure < 920;
   const isRed = effectiveWind >= 88 || surgeHeight >= 2.5;
-  const riskTier = isRed ? "RED" : effectiveWind >= 50 ? "ORANGE" : effectiveWind >= 30 ? "YELLOW" : "GREEN";
-  const riskColor = isRed ? "#ef4444" : riskTier === "ORANGE" ? "#f97316" : riskTier === "YELLOW" ? "#eab308" : "#10b981";
+  const riskTier = isBlack ? "BLACK" : isRed ? "RED" : effectiveWind >= 50 ? "ORANGE" : effectiveWind >= 30 ? "YELLOW" : "GREEN";
+  const riskColor = isBlack ? "#7f1d1d" : isRed ? "#ef4444" : riskTier === "ORANGE" ? "#f97316" : riskTier === "YELLOW" ? "#eab308" : "#10b981";
 
   const flip = longitude < 77 ? -1 : 1;
   const destLat = latitude - 0.07;
@@ -1068,28 +1102,28 @@ app.post('/run-pipeline', verifyInternalApiToken, async (req, res) => {
   const isShelterFull = shelterOccupancyAlpha >= 900;
 
   // Step D: Real Road Evacuation Graph Computation
-  const roadRouting = await generateRealRoadEvacuationRoute(latitude, longitude, destLat, destLon, isRed, flip, sectorConfig);
+  const roadRouting = await generateRealRoadEvacuationRoute(latitude, longitude, destLat, destLon, isRed || isBlack, flip, sectorConfig);
 
   // Step E: Multilingual Dispatches & TTS Audio Feeds
-  const { broadcasts, ttsData } = generateMultilingualBroadcasts(locationName, effectiveWind, surgeHeight, isRed);
+  const { broadcasts, ttsData } = generateMultilingualBroadcasts(locationName, effectiveWind, surgeHeight, isRed, isBlack);
 
-  // Step F: Live Gemini 2.0 Flash Deep Reasoning
-  let aiImpactDirective = isRed
-    ? `[GEMINI 2.0 FLASH DIRECTIVE] Atmospheric telemetry and hydrodynamic surge models project a ${surgeHeight}m surge in ${locationName}. Coastal 220kV substations face imminent tripping. Impassable floodwaters identified at Km-42. Follow the real-road bypass to Haven Gamma (>18m MSL).`
-    : `[GEMINI 2.0 FLASH DIRECTIVE] Telemetry in ${locationName} is within safe operational thresholds. Power distribution networks and highways to Haven Gamma operate with normal baselines.`;
+  // Step F: Live Gemini 3.7 Flash Deep Reasoning
+  let aiImpactDirective = isBlack || isRed
+    ? `[GEMINI 3.7 FLASH DIRECTIVE] Atmospheric telemetry and hydrodynamic surge models project a ${surgeHeight}m surge in ${locationName}. Coastal 220kV substations face imminent tripping. Impassable floodwaters identified at Km-42. Follow the real-road bypass to Haven Gamma (>18m MSL).`
+    : `[GEMINI 3.7 FLASH DIRECTIVE] Telemetry in ${locationName} is within safe operational thresholds. Power distribution networks and highways to Haven Gamma operate with normal baselines.`;
 
   try {
-    const prompt = `You are the Cyclone Resilience Command Hub Decision Core powered by Gemini 2.0 Flash.
+    const prompt = `You are the Cyclone Resilience Command Hub Decision Core powered by Gemini 3.7 Flash.
 Location: ${locationName}
 Wind Velocity: ${effectiveWind} km/h, Barometric Pressure: ${effectivePressure} hPa, Storm Surge: ${surgeHeight}m, Status: ${riskTier} TIER.
 Provide a concise 2-sentence physical infrastructure directive on electrical substations, GEE radar flood avoidance, and elevated shelter navigation.`;
 
     const aiRes = await executeGeminiInference(prompt, "You are a mission-critical civil defense orchestrator.");
     if (aiRes && aiRes.trim().length > 10) {
-      aiImpactDirective = `[GEMINI 2.0 FLASH DIRECTIVE] ${aiRes.trim()}`;
+      aiImpactDirective = `[GEMINI 3.7 FLASH DIRECTIVE] ${aiRes.trim()}`;
     }
   } catch (aiErr) {
-    console.warn("[GEMINI 2.0 FLASH] Generative reasoning failed, maintaining calibrated physics directive.");
+    console.warn("[GEMINI 3.7 FLASH] Generative reasoning failed, maintaining calibrated physics directive.");
   }
 
   // Step G: Vertex AI AutoML Probabilities
@@ -1105,7 +1139,7 @@ Provide a concise 2-sentence physical infrastructure directive on electrical sub
   };
 
   // Step I: Public Multi-Agency Feeds
-  const publicData = aggregatePublicDatasets(locationName, isRed);
+  const publicData = aggregatePublicDatasets(locationName, isRed, isBlack);
 
   // Step J: 128-Byte Zero-Internet LoRa Disaster Radio Mesh Packet
   const loraPacket = `[LORA_MESH_EMERGENCY] LOC:${latitude.toFixed(2)},${longitude.toFixed(2)}|TIER:${riskTier}|WIND:${effectiveWind}KMPH|SURGE:${surgeHeight}M|DEST:GAMMA_HAVEN_18MSL|ROUTING:REAL_ROAD_BYPASS|AUTH:NDMA_OFFLINE_SIG`;
@@ -1120,13 +1154,13 @@ Provide a concise 2-sentence physical infrastructure directive on electrical sub
 
   const activeInfra = sectorConfig.infrastructure.map((inf) => ({
     ...inf,
-    status: isRed ? inf.stressStatus : inf.normalStatus,
-    color: isRed ? "#ef4444" : "#10b981"
+    status: isBlack || isRed ? inf.stressStatus : inf.normalStatus,
+    color: isBlack || isRed ? "#ef4444" : "#10b981"
   }));
 
   const payload = {
     success: true,
-    engine: `Google Gemini 2.0 Flash Agent & Vertex AI AutoML`,
+    engine: `Google Gemini 3.7 Flash Agent & Vertex AI AutoML`,
     activeModel: PRIMARY_GEMINI_MODEL,
     isOfflineMode: false,
     riskTier,
@@ -1153,8 +1187,8 @@ Provide a concise 2-sentence physical infrastructure directive on electrical sub
       instrument: "Synthetic Aperture Radar (SAR)",
       polarization: "VV + VH C-Band",
       groundSamplingDistanceMeters: 10,
-      soilMoistureSaturationPercentage: isRed ? 94 : 38,
-      waterInundationConfidence: isRed ? "0.95 (High Inundation Extent)" : "0.02 (Dry Baseline)",
+      soilMoistureSaturationPercentage: isBlack || isRed ? 94 : 38,
+      waterInundationConfidence: isBlack || isRed ? "0.95 (High Inundation Extent)" : "0.02 (Dry Baseline)",
       runoffChokepointsIdentified: [
         `${locationName} Coastal Outfall Confluence`,
         `Km-42 Arterial Highway Sluice Underpass`
@@ -1162,20 +1196,20 @@ Provide a concise 2-sentence physical infrastructure directive on electrical sub
     },
     parametricInsurance: {
       parametricContractId: `PARAM-INS-LIVE-${locationName.toUpperCase().replace(/[^A-Z]/g, "")}`,
-      status: isRed ? "LIQUIDITY_UNLOCKED" : "MONITORING_ESCROW",
-      payoutTier: isRed ? "TIER 1: EMERGENCY CAT DISBURSEMENT" : "ZERO DISBURSEMENT",
-      disbursementAmountFormatted: isRed ? "₹5.0 Crore" : "₹0.00",
-      actionableDirectives: isRed ? "Immediate liquidity unlocked for municipal fuel and emergency food rations." : "Escrow secure."
+      status: isBlack || isRed ? "LIQUIDITY_UNLOCKED" : "MONITORING_ESCROW",
+      payoutTier: isBlack || isRed ? "TIER 1: EMERGENCY CAT DISBURSEMENT" : "ZERO DISBURSEMENT",
+      disbursementAmountFormatted: isBlack || isRed ? "₹5.0 Crore" : "₹0.00",
+      actionableDirectives: isBlack || isRed ? "Immediate liquidity unlocked for municipal fuel and emergency food rations." : "Escrow secure."
     },
     viirsNighttimeLights: {
       baselineRadianceMean: 48.6,
-      gridCollapseProbabilityPercent: isRed ? 94 : 8,
-      estimatedDarkPopulation: isRed ? 420000 : 0,
-      recommendedEmergencyGeneratorsMW: isRed ? 8.5 : 0.5,
-      priorityFeederActions: isRed ? "Grid collapse imminent on 33kV lines. Deploy auxiliary mobile generators to Haven Gamma." : "Grid operational.",
+      gridCollapseProbabilityPercent: isBlack || isRed ? 94 : 8,
+      estimatedDarkPopulation: isBlack || isRed ? 420000 : 0,
+      recommendedEmergencyGeneratorsMW: isBlack || isRed ? 8.5 : 0.5,
+      priorityFeederActions: isBlack || isRed ? "Grid collapse imminent on 33kV lines. Deploy auxiliary mobile generators to Haven Gamma." : "Grid operational.",
       viirsGridPoints: [
-        { id: "V1", name: "Coastal Commercial Grid", coordinates: [latitude + 0.015, longitude + (0.02 * flip)], baselineRadiance: 52.4, postStormRadianceForecast: isRed ? 1.2 : 48.0, blackoutRiskPercent: isRed ? 96 : 12, substationStatus: isRed ? "FLOODED" : "NORMAL", color: isRed ? "#ef4444" : "#eab308" },
-        { id: "V2", name: "Central Urban Hospital Grid", coordinates: [latitude - 0.01, longitude + (0.01 * flip)], baselineRadiance: 68.1, postStormRadianceForecast: isRed ? 14.5 : 65.0, blackoutRiskPercent: isRed ? 78 : 8, substationStatus: isRed ? "ISOLATED" : "NORMAL", color: isRed ? "#f97316" : "#eab308" },
+        { id: "V1", name: "Coastal Commercial Grid", coordinates: [latitude + 0.015, longitude + (0.02 * flip)], baselineRadiance: 52.4, postStormRadianceForecast: isBlack || isRed ? 1.2 : 48.0, blackoutRiskPercent: isBlack || isRed ? 96 : 12, substationStatus: isBlack || isRed ? "FLOODED" : "NORMAL", color: isBlack || isRed ? "#ef4444" : "#eab308" },
+        { id: "V2", name: "Central Urban Hospital Grid", coordinates: [latitude - 0.01, longitude + (0.01 * flip)], baselineRadiance: 68.1, postStormRadianceForecast: isBlack || isRed ? 14.5 : 65.0, blackoutRiskPercent: isBlack || isRed ? 78 : 8, substationStatus: isBlack || isRed ? "ISOLATED" : "NORMAL", color: isBlack || isRed ? "#f97316" : "#eab308" },
         { id: "V3", name: "Haven Ridge Sector", coordinates: [destLat, destLon], baselineRadiance: 24.3, postStormRadianceForecast: 22.8, blackoutRiskPercent: 12, substationStatus: "STABLE_ENERGIZED", color: "#10b981" }
       ]
     },
@@ -1194,7 +1228,7 @@ Provide a concise 2-sentence physical infrastructure directive on electrical sub
     evacuationRouting: roadRouting,
     infrastructureVulnerability: activeInfra,
     impactAnalysis: aiImpactDirective,
-    evacuationZones: isRed
+    evacuationZones: isBlack || isRed
       ? [`Zone Red: Coastal Perimeter (<4m MSL) - Mandatory Evacuation to Haven Gamma`, `Zone Orange: River Inundation Floodways`]
       : [`Zone Green: All clear in current sector`],
     baseWarningMessage: broadcasts.en,
@@ -1256,7 +1290,7 @@ app.post('/api/verify-auth', (req, res) => {
 app.post('/analyze-citizen-damage', verifyInternalApiToken, async (req, res) => {
   const { imageBase64, citizenLocation = "Coastal Sector" } = req.body || {};
 
-  const prompt = `Inspect this citizen-submitted disaster damage photo from ${citizenLocation} using Gemini 2.0 Flash Vision.
+  const prompt = `Inspect this citizen-submitted disaster damage photo from ${citizenLocation} using Gemini 3.7 Flash Vision.
 Identify the structural damage, power grid hazards, or floodwater depth.
 Return strictly JSON with:
 "damageCategory": (Short title e.g. "Downed 33kV Feeder Line" or "Submerged Culvert"),
@@ -1271,7 +1305,7 @@ Return strictly JSON with:
       return res.json({ success: true, visionReport: parsed });
     }
   } catch (err) {
-    console.warn("⚠️ [GEMINI 2.0 VISION] Image inspection parsed with deterministic fallback.");
+    console.warn("⚠️ [GEMINI 3.7 VISION] Image inspection parsed with deterministic fallback.");
   }
 
   return res.json({
