@@ -1310,7 +1310,9 @@ app.post('/api/verify-auth', (req, res) => {
 app.post('/analyze-citizen-damage', verifyInternalApiToken, async (req, res) => {
   const { imageBase64, citizenLocation = "Coastal Sector" } = req.body || {};
 
-  const prompt = `Inspect this citizen-submitted disaster damage photo from ${citizenLocation} using Gemini 3.8 Flash Vision.
+  console.log(`[VISION API] Received image upload request from ${citizenLocation}.`);
+
+  const prompt = `Inspect this citizen-submitted disaster damage photo from ${citizenLocation}.
 Identify the structural damage, power grid hazards, or floodwater depth.
 If it is a normal scene (like friends, people, nature, or indoor rooms) with no damage, state clearly "No disaster detected. Image shows normal conditions."
 Return strictly JSON with:
@@ -1320,15 +1322,26 @@ Return strictly JSON with:
 
   try {
     const aiText = await executeGeminiInference(prompt, "You are an automated disaster damage computer vision inspector.", imageBase64);
+    
+    console.log("[VISION API] Raw Gemini Response:", aiText); // <--- THIS WILL TELL US EXACTLY WHAT GEMINI IS DOING
+
     if (aiText) {
-      const cleaned = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(cleaned);
-      return res.json({ success: true, visionReport: parsed });
+      // Bulletproof JSON extraction: Finds the JSON brackets even if Gemini adds conversational text
+      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return res.json({ success: true, visionReport: parsed });
+      } else {
+        console.error("[VISION API] Failed to extract JSON from Gemini output.");
+      }
+    } else {
+      console.error("[VISION API] Gemini returned null. Check API Key or ensure @google/generative-ai is installed.");
     }
   } catch (err) {
-    console.warn("⚠️️ [GEMINI 3.8 VISION] Image inspection parsed with deterministic fallback.");
+    console.error("⚠ [VISION API] Crash during parsing or inference:", err.message);
   }
 
+  console.log("[VISION API] Triggering deterministic fallback.");
   return res.json({
     success: true,
     visionReport: {
