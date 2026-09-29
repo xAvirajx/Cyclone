@@ -717,7 +717,7 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
       });
 
       if (imageBase64) {
-        const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+        const cleanBase64 = imageBase64.replace(/^data:.*?;base64,/, '');
         const imagePart = {
           inlineData: {
             data: cleanBase64,
