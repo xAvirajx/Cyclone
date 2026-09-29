@@ -151,6 +151,32 @@ export default function App() {
   const [currentLocationName, setCurrentLocationName] = useState(PREDEFINED_LOCATIONS[0].name);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
+  // ============================================================================
+  // FULLSCREEN MAP LOGIC (MOBILE & LAPTOP SUPPORT)
+  // ============================================================================
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullScreen = () => {
+    const mapElement = document.getElementById("map-wrapper");
+    if (!document.fullscreenElement) {
+      if (mapElement.requestFullscreen) mapElement.requestFullscreen();
+      else if (mapElement.webkitRequestFullscreen) mapElement.webkitRequestFullscreen();
+      else if (mapElement.msRequestFullscreen) mapElement.msRequestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else if (document.msExitFullscreen) document.msExitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
   useEffect(() => {
     document.title = "Cyclone Resilience Command Hub";
     let link = document.querySelector("link[rel~='icon']");
@@ -821,199 +847,238 @@ export default function App() {
           </div>
         </div>
 
-        <MapContainer center={[currentLat, currentLon]} zoom={8} style={{ height: '100%', width: '100%', backgroundColor: '#020617' }} zoomControl={false}>
-          <RecenterMap lat={currentLat} lon={currentLon} />
+        {/* MAP SECTION WRAPPER */}
+        <div id="map-wrapper" className="relative w-full h-[500px] lg:h-[600px] z-10 rounded-lg overflow-hidden border border-slate-700" style={{ height: '100%', position: 'relative' }}>
           
-          <TileLayer
-            key={showBhuvanLayer ? "isro-bhuvan-optical-sat" : "esri-dark-gray-canvas"}
-            attribution={showBhuvanLayer ? '&copy; ISRO / NRSC &mdash; Bhuvan Optical Satellite Feed' : '&copy; Esri World Dark Canvas'}
-            url={
-              showBhuvanLayer
-                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-            }
-          />
+          {/* NEW FULLSCREEN BUTTON */}
+          <button 
+            onClick={toggleFullScreen}
+            style={{
+              position: 'absolute',
+              top: '80px',
+              right: '10px',
+              zIndex: 1000,
+              background: 'rgba(15, 23, 42, 0.9)',
+              color: '#22d3ee',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid rgba(6, 182, 212, 0.5)',
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer'
+            }}
+            title="Toggle Fullscreen Map"
+          >
+            {isFullscreen ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>EXIT</span>
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>FULLSCREEN</span>
+              </>
+            )}
+          </button>
 
-          {/* Telemetry Radii */}
-          {dashboardData && showTelemetryRings && dashboardData.hazardRadii && (
-            <>
-              <Circle
-                center={[currentLat, currentLon]}
-                radius={dashboardData.hazardRadii.outerRadiusMeters || 15200}
+          <MapContainer center={[currentLat, currentLon]} zoom={8} style={{ height: '100%', width: '100%', backgroundColor: '#020617' }} zoomControl={false}>
+            <RecenterMap lat={currentLat} lon={currentLon} />
+            
+            <TileLayer
+              key={showBhuvanLayer ? "isro-bhuvan-optical-sat" : "esri-dark-gray-canvas"}
+              attribution={showBhuvanLayer ? '&copy; ISRO / NRSC &mdash; Bhuvan Optical Satellite Feed' : '&copy; Esri World Dark Canvas'}
+              url={
+                showBhuvanLayer
+                  ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+              }
+            />
+
+            {/* Telemetry Radii */}
+            {dashboardData && showTelemetryRings && dashboardData.hazardRadii && (
+              <>
+                <Circle
+                  center={[currentLat, currentLon]}
+                  radius={dashboardData.hazardRadii.outerRadiusMeters || 15200}
+                  pathOptions={{
+                    color: dashboardData.riskColor || '#10b981',
+                    fillColor: dashboardData.riskColor || '#10b981',
+                    fillOpacity: 0.08,
+                    weight: 1.5,
+                    dashArray: '6, 6'
+                  }}
+                >
+                  <Popup><div style={{ color: '#0f172a', fontSize: '12px' }}><strong>Outer Rainband Swath</strong></div></Popup>
+                </Circle>
+
+                <Circle
+                  center={[currentLat, currentLon]}
+                  radius={dashboardData.hazardRadii.galeRadiusMeters || 8800}
+                  pathOptions={{
+                    color: dashboardData.riskColor || '#10b981',
+                    fillColor: dashboardData.riskColor || '#10b981',
+                    fillOpacity: 0.14,
+                    weight: 2,
+                    dashArray: '4, 4'
+                  }}
+                >
+                  <Popup><div style={{ color: '#0f172a', fontSize: '12px' }}><strong>Intermediate Gale Swath</strong></div></Popup>
+                </Circle>
+
+                <Circle
+                  center={[currentLat, currentLon]}
+                  radius={dashboardData.hazardRadii.coreRadiusMeters || 4000}
+                  pathOptions={{
+                    color: dashboardData.riskColor || '#10b981',
+                    fillColor: dashboardData.riskColor || '#10b981',
+                    fillOpacity: isGreen ? 0.15 : 0.32,
+                    weight: 2.5
+                  }}
+                >
+                  <Popup>
+                    <div style={{ color: '#0f172a', fontSize: '12px' }}>
+                      <strong>{dashboardData.riskTier || "GREEN"} TIER HAZARD PERIMETER</strong><br />
+                      Surge: {dashboardData.predictiveModel?.storm_surge_predicted_meters || 0}m
+                    </div>
+                  </Popup>
+                </Circle>
+              </>
+            )}
+
+            {/* VIIRS Nighttime Radiance & Blackout Nodes */}
+            {dashboardData && showViirsHeatmap && dashboardData.viirsNighttimeLights?.viirsGridPoints?.map((vNode) => (
+              <CircleMarker
+                key={vNode.id}
+                center={vNode.coordinates}
+                radius={vNode.blackoutRiskPercent >= 70 ? 22 : 15}
                 pathOptions={{
-                  color: dashboardData.riskColor || '#10b981',
-                  fillColor: dashboardData.riskColor || '#10b981',
-                  fillOpacity: 0.08,
-                  weight: 1.5,
-                  dashArray: '6, 6'
+                  color: vNode.color,
+                  fillColor: vNode.color,
+                  fillOpacity: vNode.blackoutRiskPercent >= 70 ? 0.45 : 0.25,
+                  weight: vNode.blackoutRiskPercent >= 70 ? 2 : 1,
+                  dashArray: vNode.blackoutRiskPercent >= 70 ? '3, 3' : undefined
                 }}
               >
-                <Popup><div style={{ color: '#0f172a', fontSize: '12px' }}><strong>Outer Rainband Swath</strong></div></Popup>
-              </Circle>
+                <Popup>
+                  <div style={{ color: '#0f172a', minWidth: '190px', fontSize: '12px' }}>
+                    <strong style={{ fontSize: '13px', color: '#0f172a' }}>💡 {vNode.name}</strong><br />
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>NOAA/VIIRS DNB Night Radiance</span>
+                    <hr style={{ margin: '4px 0', border: 'none', borderTop: '1px solid #cbd5e1' }} />
+                    <div>Baseline Radiance: <strong>{vNode.baselineRadiance} nW/(cm²·sr)</strong></div>
+                    <div>Post-Surge Forecast: <strong>{vNode.postStormRadianceForecast} nW/(cm²·sr)</strong></div>
+                    <div>Blackout Probability: <strong style={{ color: vNode.color }}>{vNode.blackoutRiskPercent}%</strong></div>
+                    <div style={{ marginTop: '3px', fontSize: '11px' }}>Substation: <strong>{vNode.substationStatus}</strong></div>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            ))}
 
-              <Circle
-                center={[currentLat, currentLon]}
-                radius={dashboardData.hazardRadii.galeRadiusMeters || 8800}
+            {/* Real Road Polyline Vectors */}
+            {dashboardData && showNavigationRoute && dashboardData.evacuationRouting?.routeWaypoints && dashboardData.evacuationRouting.routeWaypoints.length > 1 && (
+              <Polyline
+                positions={dashboardData.evacuationRouting.routeWaypoints}
                 pathOptions={{
-                  color: dashboardData.riskColor || '#10b981',
-                  fillColor: dashboardData.riskColor || '#10b981',
-                  fillOpacity: 0.14,
-                  weight: 2,
-                  dashArray: '4, 4'
-                }}
-              >
-                <Popup><div style={{ color: '#0f172a', fontSize: '12px' }}><strong>Intermediate Gale Swath</strong></div></Popup>
-              </Circle>
-
-              <Circle
-                center={[currentLat, currentLon]}
-                radius={dashboardData.hazardRadii.coreRadiusMeters || 4000}
-                pathOptions={{
-                  color: dashboardData.riskColor || '#10b981',
-                  fillColor: dashboardData.riskColor || '#10b981',
-                  fillOpacity: isGreen ? 0.15 : 0.32,
-                  weight: 2.5
+                  color: '#38bdf8',
+                  weight: 5,
+                  opacity: 0.95,
+                  lineJoin: 'round',
+                  lineCap: 'round'
                 }}
               >
                 <Popup>
                   <div style={{ color: '#0f172a', fontSize: '12px' }}>
-                    <strong>{dashboardData.riskTier || "GREEN"} TIER HAZARD PERIMETER</strong><br />
-                    Surge: {dashboardData.predictiveModel?.storm_surge_predicted_meters || 0}m
+                    <strong style={{ color: '#0284c7' }}>🚗 Real Road Evacuation Route</strong><br />
+                    Distance: <strong>{dashboardData.evacuationRouting.totalDistanceKm || 14.8} km</strong><br />
+                    Est. Convoy Transit: <strong>{dashboardData.evacuationRouting.estimatedTransitMinutes || 22} mins</strong><br />
+                    Destination: <strong>{dashboardData.evacuationRouting?.destinationLocation?.name || "Haven Gamma (18.5m MSL)"}</strong>
                   </div>
                 </Popup>
-              </Circle>
-            </>
-          )}
+              </Polyline>
+            )}
 
-          {/* VIIRS Nighttime Radiance & Blackout Nodes */}
-          {dashboardData && showViirsHeatmap && dashboardData.viirsNighttimeLights?.viirsGridPoints?.map((vNode) => (
-            <CircleMarker
-              key={vNode.id}
-              center={vNode.coordinates}
-              radius={vNode.blackoutRiskPercent >= 70 ? 22 : 15}
-              pathOptions={{
-                color: vNode.color,
-                fillColor: vNode.color,
-                fillOpacity: vNode.blackoutRiskPercent >= 70 ? 0.45 : 0.25,
-                weight: vNode.blackoutRiskPercent >= 70 ? 2 : 1,
-                dashArray: vNode.blackoutRiskPercent >= 70 ? '3, 3' : undefined
-              }}
-            >
-              <Popup>
-                <div style={{ color: '#0f172a', minWidth: '190px', fontSize: '12px' }}>
-                  <strong style={{ fontSize: '13px', color: '#0f172a' }}>💡 {vNode.name}</strong><br />
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>NOAA/VIIRS DNB Night Radiance</span>
-                  <hr style={{ margin: '4px 0', border: 'none', borderTop: '1px solid #cbd5e1' }} />
-                  <div>Baseline Radiance: <strong>{vNode.baselineRadiance} nW/(cm²·sr)</strong></div>
-                  <div>Post-Surge Forecast: <strong>{vNode.postStormRadianceForecast} nW/(cm²·sr)</strong></div>
-                  <div>Blackout Probability: <strong style={{ color: vNode.color }}>{vNode.blackoutRiskPercent}%</strong></div>
-                  <div style={{ marginTop: '3px', fontSize: '11px' }}>Substation: <strong>{vNode.substationStatus}</strong></div>
-                </div>
-              </Popup>
-            </CircleMarker>
-          ))}
-
-          {/* Real Road Polyline Vectors */}
-          {dashboardData && showNavigationRoute && dashboardData.evacuationRouting?.routeWaypoints && dashboardData.evacuationRouting.routeWaypoints.length > 1 && (
-            <Polyline
-              positions={dashboardData.evacuationRouting.routeWaypoints}
-              pathOptions={{
-                color: '#38bdf8',
-                weight: 5,
-                opacity: 0.95,
-                lineJoin: 'round',
-                lineCap: 'round'
-              }}
-            >
-              <Popup>
-                <div style={{ color: '#0f172a', fontSize: '12px' }}>
-                  <strong style={{ color: '#0284c7' }}>🚗 Real Road Evacuation Route</strong><br />
-                  Distance: <strong>{dashboardData.evacuationRouting.totalDistanceKm || 14.8} km</strong><br />
-                  Est. Convoy Transit: <strong>{dashboardData.evacuationRouting.estimatedTransitMinutes || 22} mins</strong><br />
-                  Destination: <strong>{dashboardData.evacuationRouting?.destinationLocation?.name || "Haven Gamma (18.5m MSL)"}</strong>
-                </div>
-              </Popup>
-            </Polyline>
-          )}
-
-          {dashboardData && showNavigationRoute && dashboardData.evacuationRouting?.floodedObstacleWaypoints && dashboardData.evacuationRouting.floodedObstacleWaypoints.length > 1 && (
-            <Polyline
-              positions={dashboardData.evacuationRouting.floodedObstacleWaypoints}
-              pathOptions={{
-                color: '#ef4444',
-                weight: 4,
-                dashArray: '6, 6',
-                opacity: 0.85
-              }}
-            >
-              <Popup>
-                <div style={{ color: '#0f172a', fontSize: '12px' }}>
-                  <strong style={{ color: '#dc2626' }}>⛔ IMPASSABLE FLOODED ROADWAY</strong><br />
-                  Status: GEE SAR Inundation Detected (&gt;1.5m Floodwater)<br />
-                  Action: Bypassed via Google Maps avoidPolygons
-                </div>
-              </Popup>
-            </Polyline>
-          )}
-
-          {/* Infrastructure Markers */}
-          {dashboardData &&
-            dashboardData.infrastructureVulnerability?.map((infra) => (
-              <CircleMarker
-                key={infra.id}
-                center={[infra.coordinates.lat, infra.coordinates.lon]}
-                radius={8}
+            {dashboardData && showNavigationRoute && dashboardData.evacuationRouting?.floodedObstacleWaypoints && dashboardData.evacuationRouting.floodedObstacleWaypoints.length > 1 && (
+              <Polyline
+                positions={dashboardData.evacuationRouting.floodedObstacleWaypoints}
                 pathOptions={{
-                  color: infra.color,
-                  fillColor: infra.color,
-                  fillOpacity: 0.95,
-                  weight: 2
+                  color: '#ef4444',
+                  weight: 4,
+                  dashArray: '6, 6',
+                  opacity: 0.85
                 }}
               >
                 <Popup>
-                  <div style={{ color: '#0f172a', minWidth: '200px', fontSize: '12px' }}>
-                    <strong style={{ fontSize: '13px' }}>{infra.name}</strong><br />
-                    <span>Sector: <strong>{infra.category}</strong></span><br />
-                    <span>Elevation: <strong>{infra.elevationMeters}m MSL</strong></span><br />
-                    <span style={{ color: infra.color, fontWeight: 'bold' }}>Status: {infra.status}</span><br />
-                    <hr style={{ margin: '4px 0', border: 'none', borderTop: '1px solid #cbd5e1' }} />
-                    <span style={{ color: '#0284c7', fontSize: '11px' }}><strong>Hardening:</strong> {infra.hardeningProtocol}</span>
+                  <div style={{ color: '#0f172a', fontSize: '12px' }}>
+                    <strong style={{ color: '#dc2626' }}>⛔ IMPASSABLE FLOODED ROADWAY</strong><br />
+                    Status: GEE SAR Inundation Detected (&gt;1.5m Floodwater)<br />
+                    Action: Bypassed via Google Maps avoidPolygons
                   </div>
                 </Popup>
-              </CircleMarker>
-            ))}
+              </Polyline>
+            )}
 
-          {/* Shelter Network Markers */}
-          {dashboardData &&
-            dashboardData.shelterNetwork?.shelters?.map((shelter) => (
-              <CircleMarker
-                key={shelter.id}
-                center={[shelter.coordinates.lat, shelter.coordinates.lon]}
-                radius={11}
-                pathOptions={{
-                  color: shelter.occupancyPercentage >= 90 ? '#ef4444' : shelter.occupancyPercentage >= 70 ? '#f59e0b' : '#10b981',
-                  fillColor: shelter.occupancyPercentage >= 90 ? '#dc2626' : shelter.occupancyPercentage >= 70 ? '#d97706' : '#059669',
-                  fillOpacity: 0.9,
-                  weight: 2.5
-                }}
-              >
-                <Popup>
-                  <div style={{ color: '#0f172a', minWidth: '210px', fontSize: '12px' }}>
-                    <strong style={{ fontSize: '13px', color: '#0f172a' }}>🏠 {shelter.name}</strong><br />
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>{shelter.type}</span>
-                    <hr style={{ margin: '4px 0', border: 'none', borderTop: '1px solid #cbd5e1' }} />
-                    <div>Occupancy: <strong>{shelter.currentOccupancy} / {shelter.capacity} ({shelter.occupancyPercentage}%)</strong></div>
-                    <div>Potable Water: <strong>{(shelter.cleanWaterLiters || 0).toLocaleString()} L</strong></div>
-                    <div>Medical Kits: <strong>{shelter.medicalKits} kits</strong></div>
-                    <div>Elevation: <strong>{shelter.elevationMeters}m MSL</strong></div>
-                    <div style={{ marginTop: '4px', fontWeight: 'bold', color: shelter.occupancyPercentage >= 90 ? '#dc2626' : '#059669' }}>
-                      Status: {shelter.occupancyPercentage >= 90 ? "🚨 FULL - DIVERSION ACTIVE" : "✅ ACCEPTING CITIZENS"}
+            {/* Infrastructure Markers */}
+            {dashboardData &&
+              dashboardData.infrastructureVulnerability?.map((infra) => (
+                <CircleMarker
+                  key={infra.id}
+                  center={[infra.coordinates.lat, infra.coordinates.lon]}
+                  radius={8}
+                  pathOptions={{
+                    color: infra.color,
+                    fillColor: infra.color,
+                    fillOpacity: 0.95,
+                    weight: 2
+                  }}
+                >
+                  <Popup>
+                    <div style={{ color: '#0f172a', minWidth: '200px', fontSize: '12px' }}>
+                      <strong style={{ fontSize: '13px' }}>{infra.name}</strong><br />
+                      <span>Sector: <strong>{infra.category}</strong></span><br />
+                      <span>Elevation: <strong>{infra.elevationMeters}m MSL</strong></span><br />
+                      <span style={{ color: infra.color, fontWeight: 'bold' }}>Status: {infra.status}</span><br />
+                      <hr style={{ margin: '4px 0', border: 'none', borderTop: '1px solid #cbd5e1' }} />
+                      <span style={{ color: '#0284c7', fontSize: '11px' }}><strong>Hardening:</strong> {infra.hardeningProtocol}</span>
                     </div>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            ))}
-        </MapContainer>
+                  </Popup>
+                </CircleMarker>
+              ))}
+
+            {/* Shelter Network Markers */}
+            {dashboardData &&
+              dashboardData.shelterNetwork?.shelters?.map((shelter) => (
+                <CircleMarker
+                  key={shelter.id}
+                  center={[shelter.coordinates.lat, shelter.coordinates.lon]}
+                  radius={11}
+                  pathOptions={{
+                    color: shelter.occupancyPercentage >= 90 ? '#ef4444' : shelter.occupancyPercentage >= 70 ? '#f59e0b' : '#10b981',
+                    fillColor: shelter.occupancyPercentage >= 90 ? '#dc2626' : shelter.occupancyPercentage >= 70 ? '#d97706' : '#059669',
+                    fillOpacity: 0.9,
+                    weight: 2.5
+                  }}
+                >
+                  <Popup>
+                    <div style={{ color: '#0f172a', minWidth: '210px', fontSize: '12px' }}>
+                      <strong style={{ fontSize: '13px', color: '#0f172a' }}>🏠 {shelter.name}</strong><br />
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>{shelter.type}</span>
+                      <hr style={{ margin: '4px 0', border: 'none', borderTop: '1px solid #cbd5e1' }} />
+                      <div>Occupancy: <strong>{shelter.currentOccupancy} / {shelter.capacity} ({shelter.occupancyPercentage}%)</strong></div>
+                      <div>Potable Water: <strong>{(shelter.cleanWaterLiters || 0).toLocaleString()} L</strong></div>
+                      <div>Medical Kits: <strong>{shelter.medicalKits} kits</strong></div>
+                      <div>Elevation: <strong>{shelter.elevationMeters}m MSL</strong></div>
+                      <div style={{ marginTop: '4px', fontWeight: 'bold', color: shelter.occupancyPercentage >= 90 ? '#dc2626' : '#059669' }}>
+                        Status: {shelter.occupancyPercentage >= 90 ? "🚨 FULL - DIVERSION ACTIVE" : "✅ ACCEPTING CITIZENS"}
+                      </div>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              ))}
+          </MapContainer>
+        </div> {/* <-- END OF MAP WRAPPER --> */}
 
         {/* Horizontal Swipeable Legend Strip */}
         <div className="map-legend">
