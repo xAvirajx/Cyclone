@@ -727,6 +727,31 @@ export default function App() {
 
   return (
     <div className="dashboard">
+      {/* EMERGENCY CATEGORY 5 OVERRIDE BANNER */}
+      {simulationStressTest && (
+        <div style={{
+          width: '100%',
+          background: 'linear-gradient(90deg, #7f1d1d, #ef4444, #7f1d1d)',
+          color: 'white',
+          textAlign: 'center',
+          padding: '12px',
+          fontWeight: 'bold',
+          fontSize: '14px',
+          letterSpacing: '1px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '10px',
+          animation: 'pulse-bg 2s infinite',
+          borderBottom: '2px solid #b91c1c',
+          boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+        }}>
+          <AlertTriangle size={18} />
+          URGENT OVERRIDE: CATEGORY 5 CYCLONE DETECTED. AUTO-ROUTING TO SAFE HAVEN GAMMA.
+          <AlertTriangle size={18} />
+        </div>
+      )}
+
       <div className="map-panel">
         <div className="header-overlay">
           {/* Top Title Bar with Icon & Mobile Quick-Scroll Link */}
@@ -847,7 +872,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* MAP SECTION WRAPPER */}
+       {/* MAP SECTION WRAPPER */}
         <div id="map-wrapper" className="relative w-full h-[500px] lg:h-[600px] z-10 rounded-lg overflow-hidden border border-slate-700" style={{ height: '100%', position: 'relative' }}>
           
           {/* NEW FULLSCREEN BUTTON */}
@@ -855,33 +880,28 @@ export default function App() {
             onClick={toggleFullScreen}
             style={{
               position: 'absolute',
-              top: '80px',
-              right: '10px',
+              bottom: '40px', /* This forces it to the bottom right, safely away from the top nav bar */
+              right: '12px',
               zIndex: 1000,
               background: 'rgba(15, 23, 42, 0.9)',
               color: '#22d3ee',
-              padding: '8px 12px',
-              borderRadius: '4px',
+              padding: '10px',
+              borderRadius: '8px',
               border: '1px solid rgba(6, 182, 212, 0.5)',
               backdropFilter: 'blur(8px)',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              justifyContent: 'center',
               cursor: 'pointer'
             }}
             title="Toggle Fullscreen Map"
           >
+            {/* The text has been removed, leaving only the SVG icon */}
             {isFullscreen ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>EXIT</span>
-              </>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
             ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>FULLSCREEN</span>
-              </>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
             )}
           </button>
 
@@ -1089,7 +1109,21 @@ export default function App() {
         </div>
 
         {/* Floating Evaluate Pre-Landfall Risk Action Button */}
-        <button onClick={() => fetchAIAnalysis()} disabled={loading} className="action-button" style={{ background: dashboardData?.riskColor || '#059669' }}>
+        <button 
+          onClick={() => fetchAIAnalysis()} 
+          disabled={loading} 
+          className="action-button" 
+          style={{ 
+            background: dashboardData?.riskColor || '#059669',
+            width: 'fit-content', /* This shrinks the button to fit the text exactly */
+            margin: '12px auto',  /* This centers the shrunk button horizontally */
+            padding: '12px 32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+        >
           {loading ? <Activity size={16} className="spinner" /> : <AlertTriangle size={16} />}
           {loading ? "Evaluating Telemetry & BigQuery..." : `Evaluate Risk for ${currentLocationName}`}
         </button>
@@ -1212,7 +1246,7 @@ export default function App() {
                 </div>
               ) : (
                 <p style={{ margin: 0, fontSize: '10.5px', color: '#94a3b8' }}>
-                  Upload citizen-submitted photos for Multimodal Gemini & Vertex Vision damage assessment.
+                  Upload citizen-submitted photos for Gemini 3.7 Flash's multimodal reasoning & Vertex Vision damage assessment.
                 </p>
               )}
             </div>
