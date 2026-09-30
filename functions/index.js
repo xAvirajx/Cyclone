@@ -682,8 +682,15 @@ async function initializeGeminiClient() {
 }
 
 async function executeGeminiInference(prompt, systemInstruction = "", imageBase64 = null) {
+  // 1. Check if Render is successfully passing the environment variable
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("Render Environment Variable Missing: GEMINI_API_KEY is undefined inside Node.js.");
+  }
+
   const clientObj = await initializeGeminiClient();
-  if (!clientObj) return null;
+  if (!clientObj) {
+    throw new Error("Google GenAI SDK Failed to Initialize: Check if your SDK version supports the AQ. key format.");
+  }
 
   const runWithModel = async (actualApiModel) => {
     let mimeType = "image/jpeg";
@@ -746,24 +753,26 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
   };
 
   const modelsToTry = imageBase64
-    ? ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro-latest", "gemini-pro-vision"]
-    : ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro-latest", "gemini-1.0-pro", "gemini-pro"];
+    ? ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-vision"]
+    : ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
+
+  let lastErrorMsg = "Unknown Error";
 
   for (const actualModel of modelsToTry) {
     try {
-      console.log(`[GEMINI] Routing request through actual Google endpoint: ${actualModel}...`);
+      console.log(`[GEMINI] Trying model: ${actualModel}...`);
       const result = await runWithModel(actualModel);
       if (result) {
-        console.log(`[GEMINI] Success! Model ${actualModel} accepted the payload.`);
         return result;
       }
     } catch (err) {
-      console.warn(`[GEMINI] Endpoint ${actualModel} rejected request: ${err.message}. Trying next fallback...`);
+      lastErrorMsg = err.message;
+      console.warn(`[GEMINI] Model ${actualModel} failed: ${err.message}`);
     }
   }
 
-  console.error(`❌ [GEMINI] ALL Google Cloud AI models returned errors.`);
-  return null;
+  // 2. Instead of returning null, throw the exact error from Google so the UI can display it
+  throw new Error(`Google AI Studio Rejected Request. Reason: ${lastErrorMsg}`);
 }
 
 // ============================================================================
