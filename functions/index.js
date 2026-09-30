@@ -682,7 +682,6 @@ async function initializeGeminiClient() {
 }
 
 async function executeGeminiInference(prompt, systemInstruction = "", imageBase64 = null) {
-  // 1. Check if Render is successfully passing the environment variable
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("Render Environment Variable Missing: GEMINI_API_KEY is undefined inside Node.js.");
   }
@@ -752,11 +751,9 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     return null;
   };
 
-  // The SDK requires the -latest suffix for v1beta routing. 
-  // UI will still display 3.8, but the backend will use these exact operational endpoints.
+  // 🔴 STRICTLY ONLY ONE MODEL: This prevents the loop from hiding the real error.
   const modelsToTry = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-pro-latest"
+    "gemini-1.5-flash"
   ];
 
   let lastErrorMsg = "Unknown Error";
@@ -774,7 +771,6 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     }
   }
 
-  // 2. Instead of returning null, throw the exact error from Google so the UI can display it
   throw new Error(`Google AI Studio Rejected Request. Reason: ${lastErrorMsg}`);
 }
 
