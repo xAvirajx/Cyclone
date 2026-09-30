@@ -1002,15 +1002,16 @@ export default function App() {
             <RecenterMap lat={currentLat} lon={currentLon} />
             
             <TileLayer
-              key={showBhuvanLayer ? "isro-bhuvan-optical-sat" : "esri-dark-gray-canvas"}
-              attribution={showBhuvanLayer ? '&copy; ISRO / NRSC &mdash; Bhuvan Optical Satellite Feed' : '&copy; Esri World Dark Canvas'}
-              url={
-                showBhuvanLayer
-                  ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                  : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+             key={showBhuvanLayer ? "isro-bhuvan-optical-sat" : "google-hybrid-live"}
+             attribution='&copy; Google Maps'
+             url={
+              showBhuvanLayer
+                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                : "https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
               }
-            />
-
+                subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                maxZoom={20}
+                  />
             {/* Telemetry Radii */}
             {dashboardData && showTelemetryRings && dashboardData.hazardRadii && (
               <>
@@ -1339,8 +1340,8 @@ export default function App() {
                 </div>
               ) : (
                 <p style={{ margin: 0, fontSize: '10.5px', color: '#94a3b8' }}>
-                  Upload citizen-submitted photos for Gemini 3.8 Flash's multimodal reasoning & Vertex Vision damage assessment.
-                </p>
+                 Upload citizen-submitted photos for Gemini 3.8 Flash's multimodal reasoning & Vertex Vision damage assessment.
+                    </p>
               )}
             </div>
 

@@ -690,13 +690,11 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     let cleanBase64 = imageBase64;
 
     if (imageBase64) {
-      // Dynamically extract the correct mime type from the phone's upload (handles PNG, JPEG, HEIC, etc.)
       const mimeMatch = imageBase64.match(/^data:(.*?);base64,/);
       if (mimeMatch) {
         mimeType = mimeMatch[1];
         if (mimeType === "application/octet-stream") mimeType = "image/jpeg";
       }
-      // Strip off the prefix entirely using the wildcard regex
       cleanBase64 = imageBase64.replace(/^data:.*?;base64,/, '');
     }
 
@@ -747,7 +745,6 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     return null;
   };
 
-  // BULLETPROOF FALLBACK CHAIN: Automatically cycle through all active Google endpoints to bypass 404 errors
   const modelsToTry = imageBase64
     ? ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro-latest", "gemini-pro-vision"]
     : ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro-latest", "gemini-1.0-pro", "gemini-pro"];
@@ -757,8 +754,8 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
       console.log(`[GEMINI] Routing request through actual Google endpoint: ${actualModel}...`);
       const result = await runWithModel(actualModel);
       if (result) {
-         console.log(`[GEMINI] Success! Model ${actualModel} accepted the payload.`);
-         return result;
+        console.log(`[GEMINI] Success! Model ${actualModel} accepted the payload.`);
+        return result;
       }
     } catch (err) {
       console.warn(`[GEMINI] Endpoint ${actualModel} rejected request: ${err.message}. Trying next fallback...`);
