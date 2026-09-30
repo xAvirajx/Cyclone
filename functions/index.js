@@ -752,9 +752,12 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     return null;
   };
 
-  const modelsToTry = imageBase64
-    ? ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-vision"]
-    : ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
+  const modelsToTry = [
+    "gemini-3.8-flash",
+    "gemini-3.8-pro",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro"
+  ];
 
   let lastErrorMsg = "Unknown Error";
 
