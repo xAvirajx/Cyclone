@@ -751,9 +751,11 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     return null;
   };
 
-  // 🔴 STRICTLY ONLY ONE MODEL: This prevents the loop from hiding the real error.
+  // 🔴 THE FIX: Using explicit hardcoded versions. Older SDKs reject the short names for vision tasks.
   const modelsToTry = [
-    "gemini-1.5-flash"
+    "gemini-1.5-flash-002",
+    "gemini-1.5-flash-001",
+    "gemini-1.0-pro-vision-latest"
   ];
 
   let lastErrorMsg = "Unknown Error";
