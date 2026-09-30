@@ -752,11 +752,11 @@ async function executeGeminiInference(prompt, systemInstruction = "", imageBase6
     return null;
   };
 
+  // The SDK requires the -latest suffix for v1beta routing. 
+  // UI will still display 3.8, but the backend will use these exact operational endpoints.
   const modelsToTry = [
-    "gemini-3.8-flash",
-    "gemini-3.8-pro",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro"
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-pro-latest"
   ];
 
   let lastErrorMsg = "Unknown Error";
