@@ -1012,50 +1012,64 @@ export default function App() {
                 subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
                 maxZoom={20}
                   />
-            {/* Telemetry Radii */}
-            {dashboardData && showTelemetryRings && dashboardData.hazardRadii && (
-              <>
-                <Circle
+                {/* Telemetry Radii */}
+                 {dashboardData && showTelemetryRings && dashboardData.hazardRadii && (
+                 <>
+                 {/* 1. OUTER RAINBAND (Electric Sky Blue - Wide Dash) */}
+                 <Circle
                   center={[currentLat, currentLon]}
                   radius={dashboardData.hazardRadii.outerRadiusMeters || 15200}
                   pathOptions={{
-                    color: dashboardData.riskColor || '#10b981',
-                    fillColor: dashboardData.riskColor || '#10b981',
-                    fillOpacity: 0.08,
-                    weight: 1.5,
-                    dashArray: '6, 6'
+                    color: '#00d2ff',
+                    fillColor: '#00d2ff',
+                    fillOpacity: 0.06,
+                    weight: 2,
+                    dashArray: '10, 8'
                   }}
                 >
-                  <Popup><div style={{ color: '#0f172a', fontSize: '12px' }}><strong>Outer Rainband Swath</strong></div></Popup>
+                  <Popup>
+                    <div style={{ color: '#0f172a', fontSize: '12px' }}>
+                      <strong style={{ color: '#0284c7' }}>🌧️ Outer Rainband & Advisory Buffer</strong><br/>
+                      Radius: {((dashboardData.hazardRadii.outerRadiusMeters || 15200) / 1000).toFixed(1)} km
+                    </div>
+                  </Popup>
                 </Circle>
 
+                {/* 2. GALE-FORCE WIND SWATH (Warning Amber/Gold - Tight Dash) */}
                 <Circle
                   center={[currentLat, currentLon]}
                   radius={dashboardData.hazardRadii.galeRadiusMeters || 8800}
                   pathOptions={{
-                    color: dashboardData.riskColor || '#10b981',
-                    fillColor: dashboardData.riskColor || '#10b981',
-                    fillOpacity: 0.14,
-                    weight: 2,
-                    dashArray: '4, 4'
+                    color: '#f59e0b',
+                    fillColor: '#f59e0b',
+                    fillOpacity: 0.08,
+                    weight: 2.2,
+                    dashArray: '6, 5'
                   }}
                 >
-                  <Popup><div style={{ color: '#0f172a', fontSize: '12px' }}><strong>Intermediate Gale Swath</strong></div></Popup>
+                  <Popup>
+                    <div style={{ color: '#0f172a', fontSize: '12px' }}>
+                      <strong style={{ color: '#d97706' }}>⚠️ Gale-Force Wind Impact Zone</strong><br/>
+                      Radius: {((dashboardData.hazardRadii.galeRadiusMeters || 8800) / 1000).toFixed(1)} km
+                    </div>
+                  </Popup>
                 </Circle>
 
+                {/* 3. CORE SEVERE IMPACT / SURGE EYE (High-Contrast Neon Crimson - Solid) */}
                 <Circle
                   center={[currentLat, currentLon]}
                   radius={dashboardData.hazardRadii.coreRadiusMeters || 4000}
                   pathOptions={{
-                    color: dashboardData.riskColor || '#10b981',
-                    fillColor: dashboardData.riskColor || '#10b981',
-                    fillOpacity: isGreen ? 0.15 : 0.32,
+                    color: '#ff2a55',
+                    fillColor: '#ff2a55',
+                    fillOpacity: 0.12,
                     weight: 2.5
                   }}
                 >
                   <Popup>
                     <div style={{ color: '#0f172a', fontSize: '12px' }}>
-                      <strong>{dashboardData.riskTier || "GREEN"} TIER HAZARD PERIMETER</strong><br />
+                      <strong style={{ color: '#dc2626' }}>🚨 Core Critical Impact Swath</strong><br/>
+                      Radius: {((dashboardData.hazardRadii.coreRadiusMeters || 4000) / 1000).toFixed(1)} km<br/>
                       Surge: {dashboardData.predictiveModel?.storm_surge_predicted_meters || 0}m
                     </div>
                   </Popup>
@@ -1334,7 +1348,7 @@ export default function App() {
                     <span>{visionReport.damageCategory}</span>
                     <span style={{ color: '#ef4444' }}>{visionReport.severityLevel}</span>
                   </div>
-                  <div style={{ color: '#cbd5e1', marginTop: '3px', fontSize: '10.5px' }}>
+                  <div style={{ color: '#cbd5e1', marginTop: '3px', fontSize: ' 10.5px' }}>
                     {visionReport.immediateRescueRecommendation}
                   </div>
                 </div>

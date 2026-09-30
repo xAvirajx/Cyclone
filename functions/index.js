@@ -1305,8 +1305,6 @@ app.post('/api/verify-auth', (req, res) => {
 app.post('/analyze-citizen-damage', verifyInternalApiToken, async (req, res) => {
   const { imageBase64, citizenLocation = "Coastal Sector" } = req.body || {};
 
-  console.log(`[VISION API] Received image upload request from ${citizenLocation}.`);
-
   const prompt = `Inspect this citizen-submitted disaster damage photo from ${citizenLocation}.
 Identify the structural damage, power grid hazards, or floodwater depth.
 If it is a normal scene (like friends, people, nature, or indoor rooms) with no damage, state clearly "No disaster detected. Image shows normal conditions."
@@ -1318,33 +1316,41 @@ Return strictly JSON with:
   try {
     const aiText = await executeGeminiInference(prompt, "You are an automated disaster damage computer vision inspector.", imageBase64);
     
-    console.log("[VISION API] Raw Gemini Response:", aiText); // <--- THIS WILL TELL US EXACTLY WHAT GEMINI IS DOING
-
     if (aiText) {
-      // Bulletproof JSON extraction: Finds the JSON brackets even if Gemini adds conversational text
       const jsonMatch = aiText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         return res.json({ success: true, visionReport: parsed });
       } else {
-        console.error("[VISION API] Failed to extract JSON from Gemini output.");
+        return res.json({
+          success: true,
+          visionReport: {
+            damageCategory: "Format Error: AI did not return JSON",
+            severityLevel: "MODERATE",
+            immediateRescueRecommendation: aiText.substring(0, 150) + "..."
+          }
+        });
       }
     } else {
-      console.error("[VISION API] Gemini returned null. Check API Key or ensure @google/generative-ai is installed.");
+      return res.json({
+        success: true,
+        visionReport: {
+          damageCategory: "API Connection Blocked",
+          severityLevel: "SAFE",
+          immediateRescueRecommendation: "The Google API call returned null. Check your GEMINI_API_KEY in Render."
+        }
+      });
     }
   } catch (err) {
-    console.error("⚠ [VISION API] Crash during parsing or inference:", err.message);
+    return res.json({
+      success: true,
+      visionReport: {
+        damageCategory: "Backend Crash",
+        severityLevel: "CRITICAL",
+        immediateRescueRecommendation: `Error: ${err.message}`
+      }
+    });
   }
-
-  console.log("[VISION API] Triggering deterministic fallback.");
-  return res.json({
-    success: true,
-    visionReport: {
-      damageCategory: "Downed High-Voltage Feeder & Roadway Inundation",
-      severityLevel: "CRITICAL",
-      immediateRescueRecommendation: "De-energize feeder line 42A immediately. Dispatch high-clearance rescue boat."
-    }
-  });
 });
 
 // ============================================================================
